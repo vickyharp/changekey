@@ -408,7 +408,15 @@ function applyRoute(route){
 var urlReady=false;
 function updateURL(){
   if(!urlReady) return;
-  try{ history.replaceState(null,'','#/'+buildRoute()); }catch(e){}
+  var route=buildRoute();
+  try{
+    // On a real host, reflect state in the path (pretty, no hash). On file:// or
+    // data: (where the path can't change) fall back to the hash.
+    if(location.protocol==='http:'||location.protocol==='https:')
+      history.replaceState(null,'','/'+route);
+    else
+      history.replaceState(null,'','#/'+route);
+  }catch(e){}
 }
 
 load();
@@ -692,7 +700,8 @@ window.addEventListener('hashchange', function(){
 
 urlReady=true;
 renderAll();
-updateURL();
+// No updateURL() here: a fresh load keeps the URL exactly as typed/shared
+// (e.g. /Bb stays /Bb). The URL only starts tracking once the user interacts.
 </script>
 </body>
 </html>
