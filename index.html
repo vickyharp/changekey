@@ -76,6 +76,12 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='8'%3E%3Cpath%20d='M1%201l5%205%205-5'%20stroke='%239a9891'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 15px center}
   .prompt{font-size:14px;color:var(--muted);margin:2px 2px 9px}
+  /* direction toggle (Play) */
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--card2);
+    border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:16px}
+  .segbtn{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;
+    font-size:14px;font-weight:500;padding:10px 4px;border-radius:7px;cursor:pointer;min-height:42px}
+  .segbtn[aria-selected="true"]{background:var(--accent-bg);color:var(--accent-text)}
   /* keyboard */
   .kb-acc{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;margin-bottom:5px}
   .kb-nat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
@@ -175,7 +181,11 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     <label class="field" for="play-horn">Your instrument</label>
     <select id="play-horn"></select>
   </div>
-  <p class="prompt">The conductor says to play concert&hellip;</p>
+  <div class="seg" id="play-dir" role="tablist" aria-label="Conversion direction">
+    <button class="segbtn" type="button" role="tab" data-dir="play" aria-selected="true">Concert</button>
+    <button class="segbtn" type="button" role="tab" data-dir="hear" aria-selected="false">Your note</button>
+  </div>
+  <p class="prompt" id="play-prompt">Tap the concert pitch</p>
   <div class="kb-acc" id="play-acc"></div>
   <div class="kb-nat" id="play-nat"></div>
   <div class="result" id="play-result"></div>
@@ -337,7 +347,7 @@ function staffSVG(f, h){
 /* ---- state + persistence ---- */
 // `instrument` is the single "horn in hand," shared by Play and Read. (`readPart`
 // and `pickPart` are a different thing: the instrument a part is written for.)
-var state={mode:'play', pins:[], instrument:'bb', playPc:0, readPart:'a',
+var state={mode:'play', pins:[], instrument:'bb', playPc:0, playDir:'play', readPart:'a',
   readSig:-2, pickPart:'a', pickSig:-2};
 function load(){
   try{
@@ -383,7 +393,7 @@ function parseKey(t){
 function buildRoute(){
   if(state.mode==='pick') return 'pick/'+instTok(state.pickPart)+'/'+keyTok(state.pickSig);
   if(state.mode==='read') return instTok(state.instrument)+'/from/'+instTok(state.readPart)+'/'+keyTok(state.readSig);
-  return instTok(state.instrument)+'/play/'+NOTE_TOK[state.playPc];
+  return instTok(state.instrument)+'/'+(state.playDir==='hear'?'hear':'play')+'/'+NOTE_TOK[state.playPc];
 }
 function currentRoute(){
   var h=location.hash.replace(/^#\/?/,'');
@@ -407,7 +417,7 @@ function applyRoute(route){
   var i0=parseInstrument(seg[0]); if(!i0) return false;
   state.instrument=i0;
   var kind=(seg[1]||'').toLowerCase();
-  if(kind==='play'){ state.mode='play'; var pc=parseNote(seg[2]); if(pc!==null) state.playPc=pc; }
+  if(kind==='play'||kind==='hear'){ state.mode='play'; state.playDir=kind; var pc=parseNote(seg[2]); if(pc!==null) state.playPc=pc; }
   else if(kind==='from'){
     state.mode='read';
     var p2=parseInstrument(seg[2]); if(p2) state.readPart=p2;
@@ -482,7 +492,7 @@ function buildKeyboard(){
 
 /* ---- renderers ---- */
 var SUBS={
-  play:'The conductor calls out a concert pitch — tap it to see what you play.',
+  play:'Convert between your note and the concert pitch.',
   read:"You're playing a part on your instrument — see how to read it.",
   pick:"You've been handed a part — see which instrument is easiest to read it on."
 };
@@ -498,28 +508,38 @@ function renderTabs(){
 
 function renderPlay(){
   fillSelect(document.getElementById('play-horn'), state.instrument);
+  var hear=state.playDir==='hear';   // input is your written note; output is the concert pitch
+  // direction toggle + prompt
+  var dbtns=document.querySelectorAll('#play-dir .segbtn');
+  for(var d=0;d<dbtns.length;d++)
+    dbtns[d].setAttribute('aria-selected', dbtns[d].dataset.dir===state.playDir?'true':'false');
+  document.getElementById('play-prompt').textContent=hear?'Tap the note you play':'Tap the concert pitch';
+
   var keys=document.querySelectorAll('#panel-play .key');
   for(var i=0;i<keys.length;i++)
     keys[i].setAttribute('aria-pressed', parseInt(keys[i].dataset.pc,10)===state.playPc?'true':'false');
 
   var h=inst(state.instrument);
-  var playedPc=mod12(state.playPc + h.shift);
-  var sp=spell(playedPc, true);
+  // Concert->note adds the shift; note->concert removes it.
+  var outPc=hear ? mod12(state.playPc - h.shift) : mod12(state.playPc + h.shift);
+  var sp=spell(outPc, true);
+  // The relationship "your note vs concert" is fixed (= shift), so this line reads the
+  // same in both directions.
   var sub, tert='';
-  var up=mod12(h.shift);            // semitones the played note sits ABOVE the concert pitch
+  var up=mod12(h.shift);
   if(up===0){
-    sub='Same as concert — no transposition.';
+    sub='Your note is the same as concert pitch.';
   }else{
-    var down=12-up;                 // the octave-complement, played the other direction
+    var down=12-up;                 // the octave-complement, reached the other direction
     var a,b;                        // a = smaller interval (shown first), b = complement
     if(up<=down){ a={n:up,dir:'higher'}; b={n:down,dir:'lower'}; }
     else{ a={n:down,dir:'lower'}; b={n:up,dir:'higher'}; }
-    sub='<strong>'+a.n+' semitone'+(a.n===1?'':'s')+' '+a.dir+'</strong> than concert · a '+intervalName(a.n);
+    sub='Your note is <strong>'+a.n+' semitone'+(a.n===1?'':'s')+' '+a.dir+'</strong> than concert · a '+intervalName(a.n);
     tert='or '+b.n+' semitones '+b.dir+' · a '+intervalName(b.n);
   }
   if(sp.alt) tert=(tert?tert+' · ':'')+'also written '+sp.alt;
   document.getElementById('play-result').innerHTML=
-    '<div class="cap">On your '+h.key+', play</div>'+
+    '<div class="cap">'+(hear?'Concert pitch':'Your note')+'</div>'+
     '<div class="big">'+sp.main+'</div>'+
     '<div class="sub">'+sub+'</div>'+
     (tert?'<div class="tert">'+tert+'</div>':'');
@@ -643,6 +663,10 @@ document.querySelector('.tabs').addEventListener('click', function(e){
   state.mode=t.dataset.mode; save(); renderAll();
 });
 document.getElementById('play-horn').addEventListener('change', function(e){ state.instrument=e.target.value; save(); renderPlay(); });
+document.getElementById('play-dir').addEventListener('click', function(e){
+  var b=e.target.closest('.segbtn'); if(!b) return;
+  state.playDir=b.dataset.dir; save(); renderPlay();
+});
 document.getElementById('read-horn').addEventListener('change', function(e){ state.instrument=e.target.value; save(); renderRead(); });
 document.getElementById('read-part').addEventListener('change', function(e){ state.readPart=e.target.value; save(); renderRead(); });
 document.getElementById('pick-part').addEventListener('change', function(e){ state.pickPart=e.target.value; save(); renderPick(); });

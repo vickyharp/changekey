@@ -24,7 +24,8 @@ State is encoded in the URL, so any view is bookmarkable / QR-able:
 | Link | Opens |
 | --- | --- |
 | `changekey.to/Bb` | your instrument set to B♭ |
-| `changekey.to/Bb/play/Eb` | Play, concert E♭ |
+| `changekey.to/Bb/play/Eb` | Play, concert E♭ → what you play |
+| `changekey.to/Bb/hear/C` | Play (reversed), your written C → its concert pitch |
 | `changekey.to/Bb/from/A/2b` | Read, part for A with 2 flats |
 | `changekey.to/pick/A/2b` | Pick a horn for an A part in 2 flats |
 
