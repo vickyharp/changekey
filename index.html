@@ -335,12 +335,19 @@ function staffSVG(f, h){
 }
 
 /* ---- state + persistence ---- */
-var state={mode:'play', pins:[], playHorn:'bb', playPc:0, readHorn:'bb', readPart:'a',
+// `instrument` is the single "horn in hand," shared by Play and Read. (`readPart`
+// and `pickPart` are a different thing: the instrument a part is written for.)
+var state={mode:'play', pins:[], instrument:'bb', playPc:0, readPart:'a',
   readSig:-2, pickPart:'a', pickSig:-2};
 function load(){
   try{
     var raw=localStorage.getItem('transpose.v1');
-    if(raw){ var s=JSON.parse(raw); for(var k in s) if(state.hasOwnProperty(k)) state[k]=s[k]; }
+    if(raw){
+      var s=JSON.parse(raw);
+      // migrate older saves that stored separate play/read instruments
+      if(s.instrument===undefined && (s.playHorn||s.readHorn)) s.instrument=s.playHorn||s.readHorn;
+      for(var k in s) if(state.hasOwnProperty(k)) state[k]=s[k];
+    }
   }catch(e){}
 }
 function save(){ try{ localStorage.setItem('transpose.v1', JSON.stringify(state)); }catch(e){} updateURL(); }
@@ -375,8 +382,8 @@ function parseKey(t){
 }
 function buildRoute(){
   if(state.mode==='pick') return 'pick/'+instTok(state.pickPart)+'/'+keyTok(state.pickSig);
-  if(state.mode==='read') return instTok(state.readHorn)+'/from/'+instTok(state.readPart)+'/'+keyTok(state.readSig);
-  return instTok(state.playHorn)+'/play/'+NOTE_TOK[state.playPc];
+  if(state.mode==='read') return instTok(state.instrument)+'/from/'+instTok(state.readPart)+'/'+keyTok(state.readSig);
+  return instTok(state.instrument)+'/play/'+NOTE_TOK[state.playPc];
 }
 function currentRoute(){
   var h=location.hash.replace(/^#\/?/,'');
@@ -398,7 +405,7 @@ function applyRoute(route){
     return true;
   }
   var i0=parseInstrument(seg[0]); if(!i0) return false;
-  state.playHorn=i0; state.readHorn=i0;
+  state.instrument=i0;
   var kind=(seg[1]||'').toLowerCase();
   if(kind==='play'){ state.mode='play'; var pc=parseNote(seg[2]); if(pc!==null) state.playPc=pc; }
   else if(kind==='from'){
@@ -490,12 +497,12 @@ function renderTabs(){
 }
 
 function renderPlay(){
-  fillSelect(document.getElementById('play-horn'), state.playHorn);
+  fillSelect(document.getElementById('play-horn'), state.instrument);
   var keys=document.querySelectorAll('#panel-play .key');
   for(var i=0;i<keys.length;i++)
     keys[i].setAttribute('aria-pressed', parseInt(keys[i].dataset.pc,10)===state.playPc?'true':'false');
 
-  var h=inst(state.playHorn);
+  var h=inst(state.instrument);
   var playedPc=mod12(state.playPc + h.shift);
   var sp=spell(playedPc, true);
   var sub, tert='';
@@ -524,11 +531,11 @@ function renderSig(nEl, nameEl, f){
 }
 
 function renderRead(){
-  fillSelect(document.getElementById('read-horn'), state.readHorn);
+  fillSelect(document.getElementById('read-horn'), state.instrument);
   fillSelect(document.getElementById('read-part'), state.readPart);
   renderSig(document.getElementById('read-sig'), document.getElementById('read-signame'), state.readSig);
 
-  var part=inst(state.readPart), horn=inst(state.readHorn);
+  var part=inst(state.readPart), horn=inst(state.instrument);
   var Wf=state.readSig;
   var concertF=reduceFifths(Wf - part.shift*7);
   var readF=reduceFifths(Wf + (horn.shift - part.shift)*7);
@@ -635,8 +642,8 @@ document.querySelector('.tabs').addEventListener('click', function(e){
   var t=e.target.closest('.tab'); if(!t) return;
   state.mode=t.dataset.mode; save(); renderAll();
 });
-document.getElementById('play-horn').addEventListener('change', function(e){ state.playHorn=e.target.value; save(); renderPlay(); });
-document.getElementById('read-horn').addEventListener('change', function(e){ state.readHorn=e.target.value; save(); renderRead(); });
+document.getElementById('play-horn').addEventListener('change', function(e){ state.instrument=e.target.value; save(); renderPlay(); });
+document.getElementById('read-horn').addEventListener('change', function(e){ state.instrument=e.target.value; save(); renderRead(); });
 document.getElementById('read-part').addEventListener('change', function(e){ state.readPart=e.target.value; save(); renderRead(); });
 document.getElementById('pick-part').addEventListener('change', function(e){ state.pickPart=e.target.value; save(); renderPick(); });
 
