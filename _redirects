@@ -1,0 +1,5 @@
+# SPA fallback for Netlify / Cloudflare Pages.
+# Real files (index.html, qrcode.min.js) are served directly; any other
+# path (e.g. /Bb, /Bb/from/A/2b) falls back to index.html, which reads the
+# path and hydrates the app. 200 = rewrite (URL stays pretty), not a redirect.
+/*  /index.html  200

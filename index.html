@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f1">
+<title>changekey.to</title>
+<meta name="description" content="A quick transposition reference for transposing instruments — concert pitch, key signatures, and which horn to grab.">
+<script src="qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f5f1; --card:#ffffff; --card2:#f1efe9; --text:#1c1b19; --muted:#6d6b64;
+    --faint:#9a9891; --border:#e4e1d8; --accent:#3563e9; --accent-text:#2447b0;
+    --accent-bg:#e8edfd; --on-accent:#ffffff; --key-black:#26251f; --key-black-text:#f6f5f1;
+    --good:#1f7a4d; --good-bg:#e3f3ea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#171614; --card:#211f1c; --card2:#2a2824; --text:#f2f0ea; --muted:#a7a49b;
+      --faint:#7d7a72; --border:#35322c; --accent:#8aa4ff; --accent-text:#c3d0ff;
+      --accent-bg:#25314f; --on-accent:#10131b; --key-black:#0c0b09; --key-black-text:#e9e7e0;
+      --good:#7fd6a3; --good-bg:#1c3227;
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px; line-height:1.5; padding:0 16px calc(24px + env(safe-area-inset-bottom));
+    max-width:560px; margin:0 auto; -webkit-text-size-adjust:100%;
+  }
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
+  header{position:sticky;top:0;background:var(--bg);padding-top:14px;z-index:5}
+  .brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 10px}
+  .brand{font-size:17px;font-weight:600;letter-spacing:-.01em;color:var(--text);margin:0}
+  .brand .tld{color:var(--accent-text)}
+  .sharebtn{appearance:none;border:1px solid var(--border);background:var(--card);color:var(--text);
+    font:inherit;font-size:13px;font-weight:500;border-radius:20px;padding:7px 14px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;min-height:36px;white-space:nowrap}
+  .sharebtn:active{background:var(--card2)}
+  /* share modal */
+  .overlay{position:fixed;inset:0;background:rgba(20,19,17,.55);display:flex;align-items:center;
+    justify-content:center;padding:20px;z-index:20}
+  .overlay[hidden]{display:none}
+  .sheet{background:var(--card);border-radius:16px;padding:20px;max-width:340px;width:100%;
+    border:1px solid var(--border);max-height:90vh;overflow:auto}
+  .sheet h2{font-size:17px;font-weight:600;margin:0 0 4px}
+  .sheet p.hint{font-size:13px;color:var(--muted);margin:0 0 16px}
+  .urlrow{display:flex;gap:8px;margin-bottom:16px}
+  .urlrow input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--text);background:var(--card2);
+    border:1px solid var(--border);border-radius:10px;padding:11px 12px}
+  .urlrow button,.sheet .close{appearance:none;font:inherit;font-size:14px;font-weight:500;cursor:pointer;
+    border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:10px;padding:0 16px;min-height:44px}
+  .urlrow button.copied{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+  .qrwrap{text-align:center;margin:4px 0 18px}
+  .qrwrap svg{width:180px;height:180px;background:#fff;border-radius:10px;padding:10px;box-sizing:content-box}
+  .qrwrap .qrcap{font-size:12px;color:var(--muted);margin-top:8px}
+  .sheet .close{width:100%}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;background:var(--card2);
+    border:1px solid var(--border);border-radius:12px;padding:5px}
+  .tab{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;
+    font-size:15px;font-weight:500;padding:11px 4px;border-radius:8px;cursor:pointer;min-height:46px}
+  .tab[aria-selected="true"]{background:var(--accent-bg);color:var(--accent-text)}
+  .subtitle{color:var(--muted);font-size:14px;margin:14px 2px 18px;line-height:1.45}
+  .panel{display:none}
+  .panel.active{display:block}
+  label.field{display:block;font-size:13px;color:var(--muted);margin:0 0 6px 2px}
+  .row{margin-bottom:16px}
+  select{appearance:none;width:100%;font:inherit;font-size:16px;color:var(--text);
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:13px 40px 13px 14px;min-height:48px;cursor:pointer;
+    background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='8'%3E%3Cpath%20d='M1%201l5%205%205-5'%20stroke='%239a9891'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 15px center}
+  .prompt{font-size:14px;color:var(--muted);margin:2px 2px 9px}
+  /* keyboard */
+  .kb-acc{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;margin-bottom:5px}
+  .kb-nat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .key{appearance:none;font:inherit;cursor:pointer;border-radius:8px;display:flex;
+    align-items:center;justify-content:center;flex-direction:column;line-height:1.05}
+  .key.nat{background:var(--card);border:1px solid var(--border);color:var(--text);
+    height:56px;font-size:17px;font-weight:500}
+  .key.acc{background:var(--key-black);border:1px solid var(--key-black);color:var(--key-black-text);
+    height:48px;font-size:12px;font-weight:500}
+  .key.acc small{font-size:11px;opacity:.7;font-weight:400}
+  .key[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .key[aria-pressed="true"] small{opacity:.85;color:var(--on-accent)}
+  /* result */
+  .result{text-align:center;background:var(--card);border:1px solid var(--border);
+    border-radius:16px;padding:22px 16px;margin-top:20px}
+  .result .cap{font-size:13px;color:var(--muted);margin-bottom:2px}
+  .result .big{font-size:clamp(3.4rem,20vw,5rem);font-weight:600;line-height:1;letter-spacing:-.01em}
+  .result .sub{font-size:15px;color:var(--text);margin-top:12px}
+  .result .sub strong{font-weight:600}
+  .result .tert{font-size:13px;color:var(--faint);margin-top:5px}
+  .result .name{font-size:15px;color:var(--muted);margin-top:4px}
+  /* staff */
+  .staff{display:block;margin:0 auto;overflow:visible;max-width:100%}
+  .staff .ln{stroke:var(--faint);stroke-width:32;stroke-linecap:butt}
+  .staff .gl{fill:var(--text)}
+  .result .staff{margin:8px auto 6px}
+  .mini-staffs{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+  .mini-staffs figure{margin:0;text-align:center}
+  .mini-staffs figcaption{font-size:12px;color:var(--muted);margin-top:3px}
+  .horn .inner .staff{margin:2px 0 12px}
+  /* key signature stepper */
+  .stepper{display:grid;grid-template-columns:56px 1fr 56px;gap:10px;align-items:center}
+  .stepbtn{appearance:none;font:inherit;font-size:26px;font-weight:500;cursor:pointer;
+    background:var(--card);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;height:64px;min-height:48px}
+  .stepbtn:active{background:var(--card2)}
+  .stepval{text-align:center;background:var(--card2);border-radius:10px;padding:10px 4px;height:64px;
+    display:flex;flex-direction:column;justify-content:center}
+  .stepval .n{font-size:24px;font-weight:600;line-height:1.05}
+  .stepval .kn{font-size:13px;color:var(--muted);margin-top:2px}
+  /* breakdown / details */
+  details{margin-top:14px;border-top:1px solid var(--border);padding-top:6px}
+  summary{cursor:pointer;color:var(--accent-text);font-size:14px;padding:8px 2px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"›";display:inline-block;margin-right:8px;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:8px 2px;font-size:15px;border-bottom:1px solid var(--border)}
+  .kv:last-child{border-bottom:0}
+  .kv .k{color:var(--muted)}
+  .kv .v{text-align:right;font-weight:500}
+  .help{font-size:13px}
+  .help summary{color:var(--faint)}
+  .help .body{color:var(--muted);font-size:13px;padding:2px 2px 8px;line-height:1.5}
+  /* pick list */
+  .concert-line{font-size:15px;color:var(--muted);margin:4px 2px 14px;text-align:center}
+  .concert-line strong{color:var(--text);font-weight:600}
+  .horn{border:1px solid var(--border);border-radius:12px;margin-bottom:9px;background:var(--card);overflow:hidden}
+  .horn.pinned{border-color:var(--accent);background:var(--accent-bg)}
+  .horn-head{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:13px 14px}
+  .pin{appearance:none;border:0;background:transparent;cursor:pointer;font-size:20px;line-height:1;
+    color:var(--faint);padding:6px;margin:-6px;min-width:34px;min-height:34px}
+  .pin[aria-pressed="true"]{color:var(--accent)}
+  .horn-name{font-size:16px;font-weight:500}
+  .horn-ex{font-size:12px;color:var(--muted);margin-top:1px}
+  .horn-right{text-align:right}
+  .horn-count{font-size:20px;font-weight:600}
+  .horn-shift{font-size:12px;color:var(--muted)}
+  .badge{display:inline-block;background:var(--good-bg);color:var(--good);font-size:11px;
+    font-weight:600;padding:2px 8px;border-radius:20px;margin-top:3px}
+  .horn details{border-top:1px solid var(--border);margin:0;padding:0}
+  .horn summary{padding:9px 14px}
+  .horn .inner{padding:0 14px 12px}
+</style>
+</head>
+<body>
+<h1 class="sr-only">changekey.to — transposing instrument quick reference</h1>
+<header>
+  <div class="brandrow">
+    <p class="brand">changekey<span class="tld">.to</span></p>
+    <button class="sharebtn" id="share-open" aria-label="Share this view">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+        <line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>Share</button>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button class="tab" role="tab" id="tab-play" aria-selected="true" data-mode="play">Play</button>
+    <button class="tab" role="tab" id="tab-read" aria-selected="false" data-mode="read">Read</button>
+    <button class="tab" role="tab" id="tab-pick" aria-selected="false" data-mode="pick">Pick</button>
+  </div>
+  <p class="subtitle" id="subtitle"></p>
+</header>
+
+<!-- PLAY -->
+<section class="panel" id="panel-play" role="tabpanel" aria-labelledby="tab-play">
+  <div class="row">
+    <label class="field" for="play-horn">Your instrument</label>
+    <select id="play-horn"></select>
+  </div>
+  <p class="prompt">The conductor says to play concert&hellip;</p>
+  <div class="kb-acc" id="play-acc"></div>
+  <div class="kb-nat" id="play-nat"></div>
+  <div class="result" id="play-result"></div>
+  <details class="help">
+    <summary>What does "concert" pitch mean?</summary>
+    <div class="body">Concert pitch is the note as it actually sounds &mdash; what a piano or tuner
+      plays. On a transposing instrument the note you finger is named differently. Tap the concert
+      note the conductor called out, and this shows the note to play so it sounds right.</div>
+  </details>
+</section>
+
+<!-- READ -->
+<section class="panel" id="panel-read" role="tabpanel" aria-labelledby="tab-read">
+  <div class="row">
+    <label class="field" for="read-horn">Your instrument</label>
+    <select id="read-horn"></select>
+  </div>
+  <div class="row">
+    <label class="field" for="read-part">The part is written for</label>
+    <select id="read-part"></select>
+  </div>
+  <div class="row">
+    <label class="field">Key signature on the page</label>
+    <div class="stepper">
+      <button class="stepbtn" id="read-minus" aria-label="Add a flat">&minus;</button>
+      <div class="stepval"><span class="n" id="read-sig">&mdash;</span><span class="kn" id="read-signame"></span></div>
+      <button class="stepbtn" id="read-plus" aria-label="Add a sharp">+</button>
+    </div>
+  </div>
+  <div class="result" id="read-result"></div>
+  <details class="help">
+    <summary>How do I count the key signature?</summary>
+    <div class="body">Look at the start of the staff: count the sharps (&#9839;) or flats (&#9837;)
+      next to the clef. Use &minus; for flats and + for sharps. You don't need to know the key's
+      name &mdash; the count is all this needs.</div>
+  </details>
+</section>
+
+<!-- PICK -->
+<section class="panel" id="panel-pick" role="tabpanel" aria-labelledby="tab-pick">
+  <div class="row">
+    <label class="field" for="pick-part">The part is written for</label>
+    <select id="pick-part"></select>
+  </div>
+  <div class="row">
+    <label class="field">Key signature on the page</label>
+    <div class="stepper">
+      <button class="stepbtn" id="pick-minus" aria-label="Add a flat">&minus;</button>
+      <div class="stepval"><span class="n" id="pick-sig">&mdash;</span><span class="kn" id="pick-signame"></span></div>
+      <button class="stepbtn" id="pick-plus" aria-label="Add a sharp">+</button>
+    </div>
+  </div>
+  <p class="concert-line" id="pick-concert"></p>
+  <div id="pick-list"></div>
+  <p class="help body" style="color:var(--faint);font-size:13px;margin-top:6px">
+    Tap the star to pin the instruments you own &mdash; they float to the top and stay for next time.</p>
+</section>
+
+<div class="overlay" id="share-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="share-title">
+  <div class="sheet">
+    <h2 id="share-title">Share this view</h2>
+    <p class="hint">A link that opens the app exactly as you have it set now.</p>
+    <div class="urlrow">
+      <input id="share-url" type="text" readonly aria-label="Shareable link">
+      <button id="share-copy" type="button">Copy</button>
+    </div>
+    <div class="qrwrap" id="share-qr"></div>
+    <button class="close" id="share-close" type="button">Done</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// One row per transposition. Bass B-flat reads like soprano B-flat, and the E-flat
+// sopranino and alto share pitch class and key signature — they differ only by octave,
+// which this app never shows — so each transposition is a single entry. `shift` is the
+// signed semitone move from concert to written pitch (positive = written above concert).
+var CATALOG = [
+  {id:'c',  key:'C',       shift:0,  ex:'Flute, oboe, piano, C parts'},
+  {id:'bb', key:'B♭', shift:2,  ex:'Trumpet, clarinet, tenor sax, bass clarinet'},
+  {id:'a',  key:'A',       shift:3,  ex:'Clarinet in A'},
+  {id:'eb', key:'E♭', shift:-3, ex:'E♭ clarinet, alto sax, bari sax'},
+  {id:'f',  key:'F',       shift:7,  ex:'French horn, English horn'},
+  {id:'d',  key:'D',       shift:-2, ex:'Clarinet or trumpet in D'},
+  {id:'g',  key:'G',       shift:5,  ex:'Alto flute, clarinet in G'}
+];
+function inst(id){ for(var i=0;i<CATALOG.length;i++) if(CATALOG[i].id===id) return CATALOG[i]; return CATALOG[1]; }
+
+var SHARP=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+var FLAT =['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+var INTERVAL=['unison','minor 2nd','major 2nd','minor 3rd','major 3rd','perfect 4th',
+  'tritone','perfect 5th','minor 6th','major 6th','minor 7th','major 7th','octave'];
+var FIFTH_NAME={'-7':'C♭','-6':'G♭','-5':'D♭','-4':'A♭','-3':'E♭',
+  '-2':'B♭','-1':'F','0':'C','1':'G','2':'D','3':'A','4':'E','5':'B','6':'F♯','7':'C♯'};
+var SHARP_ORDER=['F♯','C♯','G♯','D♯','A♯','E♯','B♯'];
+var FLAT_ORDER =['B♭','E♭','A♭','D♭','G♭','C♭','F♭'];
+
+function mod12(n){ return ((n%12)+12)%12; }
+function reduceFifths(f){ var r=mod12(f); return r<=6? r : r-12; }
+function spell(pc, preferFlat){
+  var s=SHARP[pc], fl=FLAT[pc];
+  if(s===fl) return {main:s, alt:null};
+  return preferFlat ? {main:fl, alt:s} : {main:s, alt:fl};
+}
+function intervalName(semi){
+  var a=Math.abs(semi); var base=a%12; var name=(a>0 && base===0)?'octave':INTERVAL[base];
+  return name;
+}
+function sigText(f){
+  if(f===0) return 'no ♯/♭';
+  return Math.abs(f)+(f>0?'♯':'♭');
+}
+function sigLong(f){
+  if(f===0) return 'no sharps or flats';
+  return Math.abs(f)+(f>0?' sharp':' flat')+(Math.abs(f)===1?'':'s');
+}
+function accidentalList(f){
+  if(f>0) return SHARP_ORDER.slice(0,f).join(' ');
+  if(f<0) return FLAT_ORDER.slice(0,-f).join(' ');
+  return '—';
+}
+
+/* ---- staff + key signature (Bravura SMuFL outlines, 1000 upm = 4 staff spaces) ---- */
+var GLYPH={
+  gClef:"M376 415C374 427 376 428 382 434C490 535 572 662 572 815C572 902 548 988 507 1048C492 1070 466 1098 455 1098C441 1098 410 1072 390 1050C316 968 292 843 292 739C292 681 299 616 306 575C308 563 309 561 297 551C153 432 0 289 0 87C0 -87 119 -252 364 -252C387 -252 413 -250 433 -246C444 -244 446 -243 448 -255C460 -322 475 -409 475 -456C475 -604 375 -622 316 -622C262 -622 236 -606 236 -593C236 -586 245 -583 268 -576C299 -567 335 -540 335 -482C335 -427 300 -380 239 -380C172 -380 132 -433 132 -495C132 -560 171 -658 322 -658C389 -658 519 -628 519 -458C519 -401 501 -306 490 -244C488 -232 489 -233 503 -227C604 -187 671 -102 671 11C671 139 577 252 430 252C404 252 404 252 401 270ZM470 943C503 943 530 916 530 861C530 750 435 660 356 591C349 585 345 586 343 599C339 625 337 659 337 691C337 847 409 943 470 943ZM361 262C364 243 364 244 346 238C258 208 201 129 201 44C201 -46 248 -110 316 -133C324 -136 336 -139 343 -139C351 -139 355 -134 355 -128C355 -121 347 -118 340 -115C298 -97 268 -54 268 -8C268 49 307 92 368 109C384 113 386 112 388 101L438 -197C440 -208 439 -208 424 -211C408 -214 388 -216 368 -216C193 -216 80 -119 80 20C80 79 90 158 173 252C233 319 279 356 326 394C336 402 338 401 340 390ZM430 103C428 115 429 118 441 117C522 110 589 42 589 -46C589 -109 551 -160 495 -188C483 -194 481 -194 479 -182Z",
+  sharp:"M237 118C244 121 249 129 249 135V206C249 211 246 214 242 214C240 214 239 214 237 213C237 213 217 205 212 204C205 204 198 209 198 217V339C198 345 192 350 184 350C174 350 168 345 168 339V209C167 199 164 186 155 180C143 173 109 159 92 155C83 155 80 167 80 175V295C80 301 73 306 66 306C56 306 50 301 50 295V160C50 146 44 136 38 133C32 130 12 122 12 122C5 120 0 112 0 106V35C0 29 3 26 9 26L11 27C12 27 27 33 35 37L36 38C44 38 50 28 50 20V-79C50 -90 45 -99 39 -102C33 -104 12 -113 12 -113C5 -115 0 -123 0 -129V-200C0 -206 3 -209 9 -209L11 -208C12 -208 26 -202 35 -199C36 -198 37 -198 38 -198C45 -198 50 -209 50 -214V-337C50 -343 56 -348 63 -348C73 -348 80 -343 80 -337V-198C80 -185 85 -178 90 -176L151 -151C151 -151 152 -151 152 -151L154 -150C163 -150 168 -162 168 -168V-293C168 -299 174 -304 181 -304C192 -304 198 -299 198 -293V-151C198 -143 202 -131 209 -128C216 -125 237 -117 237 -117C244 -114 249 -106 249 -100V-29C249 -24 246 -21 242 -21C240 -21 239 -21 237 -22L211 -32C205 -32 198 -26 198 -14V79C198 86 203 105 211 108ZM168 -45C162 -65 115 -85 92 -85C86 -85 81 -83 80 -80C78 -76 77 -54 77 -30C77 1 78 36 80 44C82 61 128 82 153 82C160 82 166 80 168 76C170 71 172 46 172 19C172 -8 170 -36 168 -45Z",
+  flat:"M12 -170C15 -174 18 -175 21 -175C24 -175 27 -173 27 -173C57 -156 81 -129 106 -112C195 -50 226 11 226 57C226 114 182 150 136 153C119 153 95 145 81 136C75 131 64 122 59 122C57 122 56 122 54 123C47 126 43 133 43 140C44 162 50 402 50 422C50 433 41 439 31 439C17 439 1 429 0 411C0 411 4 -160 12 -170ZM47 -81C47 -81 44 -21 44 19C44 35 45 47 46 51C53 71 93 100 116 100C145 100 157 67 157 42C157 -12 111 -66 68 -93C64 -95 61 -96 58 -96C49 -96 47 -86 47 -81Z",
+  natural:"M141 181C139 181 138 180 137 180C137 180 73 157 47 157C41 157 37 158 37 162V329C37 336 31 341 25 341H12C5 341 0 336 0 329V-186C0 -192 3 -195 9 -195L11 -194C12 -194 14 -194 15 -193C29 -187 85 -163 114 -163C124 -163 131 -166 131 -174V-323C131 -330 136 -335 143 -335H156C162 -335 168 -330 168 -323V179C168 184 164 187 160 187C159 187 157 187 156 186ZM37 39C37 53 98 79 122 79C128 79 131 78 131 74V-29C131 -47 74 -70 49 -70C42 -70 37 -68 37 -64Z"
+};
+/* treble-clef staff positions (half-spaces above the bottom line E4): line=even, space=odd */
+var SHARP_POS=[8,5,9,6,3,7,4];  /* F C G D A E B */
+var FLAT_POS =[4,7,3,6,2,5,1];  /* B E A D G C F */
+function staffAria(f){
+  if(f===0) return 'Treble staff, no sharps or flats';
+  return 'Treble staff, '+Math.abs(f)+(f>0?' sharp':' flat')+(Math.abs(f)===1?'':'s');
+}
+function staffSVG(f, h){
+  h=h||48;
+  var clefX=70, clefAdv=671, gap=150, rightPad=160;
+  var n=Math.abs(f), sharps=f>=0;
+  var pos=sharps?SHARP_POS:FLAT_POS, adv=sharps?249:226, slot=adv+80;
+  var startAcc=clefX+clefAdv+gap;
+  var width=n>0 ? (startAcc + n*slot + rightPad) : (clefX+clefAdv+rightPad);
+  var minY=-560, vh=1980;
+  var s='';
+  for(var i=0;i<5;i++){ var y=i*250; s+='<line class="ln" x1="0" y1="'+y+'" x2="'+width+'" y2="'+y+'"/>'; }
+  s+='<g class="gl"><g transform="translate('+clefX+',750) scale(1,-1)"><path d="'+GLYPH.gClef+'"/></g>';
+  var g=sharps?GLYPH.sharp:GLYPH.flat;
+  for(var k=0;k<n;k++){
+    var x=startAcc+k*slot, py=(8-pos[k])*125;
+    s+='<g transform="translate('+x+','+py+') scale(1,-1)"><path d="'+g+'"/></g>';
+  }
+  s+='</g>';
+  return '<svg class="staff" viewBox="0 '+minY+' '+width+' '+vh+'" style="height:'+h+'px" '+
+    'preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+staffAria(f)+'">'+s+'</svg>';
+}
+
+/* ---- state + persistence ---- */
+var state={mode:'play', pins:[], playHorn:'bb', playPc:0, readHorn:'bb', readPart:'a',
+  readSig:-2, pickPart:'a', pickSig:-2};
+function load(){
+  try{
+    var raw=localStorage.getItem('transpose.v1');
+    if(raw){ var s=JSON.parse(raw); for(var k in s) if(state.hasOwnProperty(k)) state[k]=s[k]; }
+  }catch(e){}
+}
+function save(){ try{ localStorage.setItem('transpose.v1', JSON.stringify(state)); }catch(e){} updateURL(); }
+
+/* ---- URL routing ---- */
+/* Scheme (path, #hash, or ?r= all accepted):
+     <inst>                      set your instrument, open Play
+     <inst>/play/<note>          Play, concert note preset
+     <inst>/from/<part>[/<key>]  Read, part instrument + key signature
+     pick/<part>[/<key>]         Pick a horn for a part
+   <inst>/<part> are instrument keys (Bb, Eb, A, F, C, D, G).
+   <note> is a pitch (Bb, Fs/F#, etc.). <key> is a signature count (2b, 3s, 0). */
+var NOTE_TOK=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+var NOTE_BASE={c:0,d:2,e:4,f:5,g:7,a:9,b:11};
+function instTok(id){ return inst(id).key.replace(/♭/g,'b'); }
+function keyTok(f){ return f===0?'0':(f>0?f+'s':(-f)+'b'); }
+function parseInstrument(t){
+  if(!t) return null; t=t.replace(/♭/g,'b').toLowerCase();
+  for(var i=0;i<CATALOG.length;i++) if(CATALOG[i].key.replace(/♭/g,'b').toLowerCase()===t) return CATALOG[i].id;
+  return null;
+}
+function parseNote(t){
+  if(!t) return null; var base=NOTE_BASE[t[0].toLowerCase()]; if(base===undefined) return null;
+  var pc=base;
+  for(var i=1;i<t.length;i++){ var c=t[i].toLowerCase(); if(c==='b'||c==='f')pc--; else if(c==='s'||c==='#')pc++; }
+  return mod12(pc);
+}
+function parseKey(t){
+  if(t==null) return null; var m=/^(\d+)\s*(b|f|s|#)?$/i.exec((''+t).trim()); if(!m) return null;
+  var n=parseInt(m[1],10), suf=(m[2]||'').toLowerCase();
+  var f=(suf==='b'||suf==='f')?-n:n; return Math.max(-7,Math.min(7,f));
+}
+function buildRoute(){
+  if(state.mode==='pick') return 'pick/'+instTok(state.pickPart)+'/'+keyTok(state.pickSig);
+  if(state.mode==='read') return instTok(state.readHorn)+'/from/'+instTok(state.readPart)+'/'+keyTok(state.readSig);
+  return instTok(state.playHorn)+'/play/'+NOTE_TOK[state.playPc];
+}
+function currentRoute(){
+  var h=location.hash.replace(/^#\/?/,'');
+  if(h) return decodeURIComponent(h);
+  if(location.protocol!=='file:'){
+    var p=location.pathname.replace(/^\//,'');
+    if(p && p!=='index.html' && p.indexOf('.')<0) return decodeURIComponent(p);
+  }
+  try{ var r=new URLSearchParams(location.search).get('r'); if(r) return decodeURIComponent(r); }catch(e){}
+  return '';
+}
+function applyRoute(route){
+  var seg=route.split('/').filter(Boolean);
+  if(!seg.length) return false;
+  if(seg[0].toLowerCase()==='pick'){
+    state.mode='pick';
+    var pi=parseInstrument(seg[1]); if(pi) state.pickPart=pi;
+    var pk=parseKey(seg[2]); if(pk!==null) state.pickSig=pk;
+    return true;
+  }
+  var i0=parseInstrument(seg[0]); if(!i0) return false;
+  state.playHorn=i0; state.readHorn=i0;
+  var kind=(seg[1]||'').toLowerCase();
+  if(kind==='play'){ state.mode='play'; var pc=parseNote(seg[2]); if(pc!==null) state.playPc=pc; }
+  else if(kind==='from'){
+    state.mode='read';
+    var p2=parseInstrument(seg[2]); if(p2) state.readPart=p2;
+    var k2=parseKey(seg[3]); if(k2!==null) state.readSig=k2;
+  } else { state.mode='play'; }
+  return true;
+}
+var urlReady=false;
+function updateURL(){
+  if(!urlReady) return;
+  try{ history.replaceState(null,'','#/'+buildRoute()); }catch(e){}
+}
+
+load();
+applyRoute(currentRoute());
+
+/* ---- instrument select ordering (pinned first) ---- */
+function orderedCatalog(){
+  var pinned=[], rest=[];
+  for(var i=0;i<CATALOG.length;i++){
+    (state.pins.indexOf(CATALOG[i].id)>=0 ? pinned : rest).push(CATALOG[i]);
+  }
+  return pinned.concat(rest);
+}
+function fillSelect(el, selectedId){
+  el.innerHTML='';
+  var list=orderedCatalog();
+  for(var i=0;i<list.length;i++){
+    var o=document.createElement('option');
+    o.value=list[i].id;
+    o.textContent=(state.pins.indexOf(list[i].id)>=0?'★ ':'')+list[i].key;
+    if(list[i].id===selectedId) o.selected=true;
+    el.appendChild(o);
+  }
+}
+
+/* ---- keyboard build ---- */
+var ACC=[{pc:1,c:2},{pc:3,c:4},{pc:6,c:8},{pc:8,c:10},{pc:10,c:12}];
+var NAT=[0,2,4,5,7,9,11];
+function buildKeyboard(){
+  var acc=document.getElementById('play-acc');
+  for(var i=0;i<ACC.length;i++){
+    var b=document.createElement('button');
+    b.className='key acc'; b.type='button';
+    b.style.gridColumn=ACC[i].c+' / span 2';
+    b.dataset.pc=ACC[i].pc;
+    b.setAttribute('aria-label','concert '+SHARP[ACC[i].pc]+' or '+FLAT[ACC[i].pc]);
+    b.innerHTML=SHARP[ACC[i].pc]+'<small>'+FLAT[ACC[i].pc]+'</small>';
+    acc.appendChild(b);
+  }
+  var nat=document.getElementById('play-nat');
+  for(var j=0;j<NAT.length;j++){
+    var n=document.createElement('button');
+    n.className='key nat'; n.type='button';
+    n.dataset.pc=NAT[j]; n.textContent=SHARP[NAT[j]];
+    n.setAttribute('aria-label','concert '+SHARP[NAT[j]]);
+    nat.appendChild(n);
+  }
+  document.getElementById('panel-play').addEventListener('click', function(e){
+    var k=e.target.closest && e.target.closest('.key'); if(!k) return;
+    state.playPc=parseInt(k.dataset.pc,10); save(); renderPlay();
+  });
+}
+
+/* ---- renderers ---- */
+var SUBS={
+  play:'The conductor calls out a concert pitch — tap it to see what you play.',
+  read:"You're playing a part on your instrument — see how to read it.",
+  pick:"You've been handed a part — see which instrument is easiest to read it on."
+};
+function renderTabs(){
+  var tabs=document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++){
+    var on=tabs[i].dataset.mode===state.mode;
+    tabs[i].setAttribute('aria-selected', on?'true':'false');
+    document.getElementById('panel-'+tabs[i].dataset.mode).classList.toggle('active', on);
+  }
+  document.getElementById('subtitle').textContent=SUBS[state.mode];
+}
+
+function renderPlay(){
+  fillSelect(document.getElementById('play-horn'), state.playHorn);
+  var keys=document.querySelectorAll('#panel-play .key');
+  for(var i=0;i<keys.length;i++)
+    keys[i].setAttribute('aria-pressed', parseInt(keys[i].dataset.pc,10)===state.playPc?'true':'false');
+
+  var h=inst(state.playHorn);
+  var playedPc=mod12(state.playPc + h.shift);
+  var sp=spell(playedPc, true);
+  var sub, tert='';
+  var up=mod12(h.shift);            // semitones the played note sits ABOVE the concert pitch
+  if(up===0){
+    sub='Same as concert — no transposition.';
+  }else{
+    var down=12-up;                 // the octave-complement, played the other direction
+    var a,b;                        // a = smaller interval (shown first), b = complement
+    if(up<=down){ a={n:up,dir:'higher'}; b={n:down,dir:'lower'}; }
+    else{ a={n:down,dir:'lower'}; b={n:up,dir:'higher'}; }
+    sub='<strong>'+a.n+' semitone'+(a.n===1?'':'s')+' '+a.dir+'</strong> than concert · a '+intervalName(a.n);
+    tert='or '+b.n+' semitones '+b.dir+' · a '+intervalName(b.n);
+  }
+  if(sp.alt) tert=(tert?tert+' · ':'')+'also written '+sp.alt;
+  document.getElementById('play-result').innerHTML=
+    '<div class="cap">On your '+h.key+', play</div>'+
+    '<div class="big">'+sp.main+'</div>'+
+    '<div class="sub">'+sub+'</div>'+
+    (tert?'<div class="tert">'+tert+'</div>':'');
+}
+
+function renderSig(nEl, nameEl, f){
+  nEl.textContent=sigText(f);
+  nameEl.textContent=f===0?'C major / A minor':(FIFTH_NAME[f]+' major');
+}
+
+function renderRead(){
+  fillSelect(document.getElementById('read-horn'), state.readHorn);
+  fillSelect(document.getElementById('read-part'), state.readPart);
+  renderSig(document.getElementById('read-sig'), document.getElementById('read-signame'), state.readSig);
+
+  var part=inst(state.readPart), horn=inst(state.readHorn);
+  var Wf=state.readSig;
+  var concertF=reduceFifths(Wf - part.shift*7);
+  var readF=reduceFifths(Wf + (horn.shift - part.shift)*7);
+  var delta=horn.shift - part.shift;              // semitones to shift each written note
+  var deltaR=((delta%12)+12)%12; if(deltaR>6) deltaR-=12;   // nearest octave-reduced direction
+
+  var res=document.getElementById('read-result');
+  var shiftLine;
+  if(deltaR===0){
+    shiftLine='Read it <strong>exactly as written</strong>'+(delta!==0?' (octave aside)':'')+'.';
+  }else{
+    var dir=deltaR>0?'up':'down', n=Math.abs(deltaR);
+    var exPc=mod12(0+deltaR); var exName=spell(exPc,true).main;
+    shiftLine='Or transpose live: read every note <strong>'+dir+' '+n+' semitone'+(n===1?'':'s')+
+      '</strong> <span style="color:var(--faint)">(a written C becomes '+exName+')</span>.';
+  }
+  res.innerHTML=
+    '<div class="cap">Read this part in</div>'+
+    staffSVG(readF, 74)+
+    '<div class="name" style="font-size:18px;color:var(--text)">'+sigText(readF)+' · '+
+      (readF===0?'C major / A minor':FIFTH_NAME[readF]+' major')+'</div>'+
+    '<div class="sub" style="margin-top:14px">'+shiftLine+'</div>'+
+    '<details><summary>Full breakdown</summary>'+
+      '<div class="kv"><span class="k">Concert key (how it sounds)</span><span class="v">'+
+        sigText(concertF)+' · '+(concertF===0?'C major':FIFTH_NAME[concertF]+' major')+'</span></div>'+
+      '<div class="kv"><span class="k">You read in</span><span class="v">'+
+        sigText(readF)+' · '+(readF===0?'C major':FIFTH_NAME[readF]+' major')+'</span></div>'+
+      '<div class="kv"><span class="k">Accidentals to read</span><span class="v">'+accidentalList(readF)+'</span></div>'+
+      '<div class="kv"><span class="k">Live transposition</span><span class="v">'+
+        (deltaR===0?'as written':(deltaR>0?'up ':'down ')+Math.abs(deltaR)+' semitone'+(Math.abs(deltaR)===1?'':'s')+
+        ' · '+intervalName(deltaR))+'</span></div>'+
+      '<div class="mini-staffs">'+
+        '<figure>'+staffSVG(concertF,46)+'<figcaption>how it sounds</figcaption></figure>'+
+        '<figure>'+staffSVG(readF,46)+'<figcaption>how you read it</figcaption></figure>'+
+      '</div>'+
+    '</details>';
+}
+
+function renderPick(){
+  fillSelect(document.getElementById('pick-part'), state.pickPart);
+  renderSig(document.getElementById('pick-sig'), document.getElementById('pick-signame'), state.pickSig);
+
+  var part=inst(state.pickPart);
+  var Wf=state.pickSig;
+  var concertF=reduceFifths(Wf - part.shift*7);
+  document.getElementById('pick-concert').innerHTML=
+    'This part sounds in <strong>'+(concertF===0?'C major':FIFTH_NAME[concertF]+' major')+
+    '</strong> ('+sigText(concertF)+')';
+
+  var rows=[];
+  for(var i=0;i<CATALOG.length;i++){
+    var H=CATALOG[i];
+    var readF=reduceFifths(Wf + (H.shift - part.shift)*7);
+    var delta=H.shift - part.shift;
+    var deltaR=((delta%12)+12)%12; if(deltaR>6) deltaR-=12;
+    rows.push({H:H, readF:readF, count:Math.abs(readF), deltaR:deltaR,
+      asWritten:(mod12(delta)===0), octave:(mod12(delta)===0 && delta!==0),
+      pinned:(state.pins.indexOf(H.id)>=0)});
+  }
+  rows.sort(function(a,b){
+    if(a.pinned!==b.pinned) return a.pinned?-1:1;
+    if(a.count!==b.count) return a.count-b.count;
+    return Math.abs(a.deltaR)-Math.abs(b.deltaR);
+  });
+
+  var html='';
+  for(var r=0;r<rows.length;r++){
+    var x=rows[r], H=x.H;
+    var shiftTxt=x.asWritten? ('as written'+(x.octave?' (8va)':'')) :
+      ((x.deltaR>0?'up ':'down ')+Math.abs(x.deltaR)+' semitone'+(Math.abs(x.deltaR)===1?'':'s'));
+    html+='<div class="horn'+(x.pinned?' pinned':'')+'">'+
+      '<div class="horn-head">'+
+        '<button class="pin" data-id="'+H.id+'" aria-pressed="'+(x.pinned?'true':'false')+
+          '" aria-label="Pin '+H.key+'">'+(x.pinned?'★':'☆')+'</button>'+
+        '<div><div class="horn-name">'+H.key+'</div><div class="horn-ex">'+H.ex+'</div>'+
+          (x.asWritten?'<span class="badge">no transposing</span>':'')+'</div>'+
+        '<div class="horn-right"><div class="horn-count">'+sigText(x.readF)+'</div>'+
+          '<div class="horn-shift">'+shiftTxt+'</div></div>'+
+      '</div>'+
+      '<details><summary>Details</summary><div class="inner">'+
+        staffSVG(x.readF,44)+
+        '<div class="kv"><span class="k">Read in</span><span class="v">'+sigText(x.readF)+' · '+
+          (x.readF===0?'C major':FIFTH_NAME[x.readF]+' major')+'</span></div>'+
+        '<div class="kv"><span class="k">Accidentals</span><span class="v">'+accidentalList(x.readF)+'</span></div>'+
+        '<div class="kv"><span class="k">Live transposition</span><span class="v">'+shiftTxt+
+          (x.asWritten?'':' · '+intervalName(x.deltaR))+'</span></div>'+
+      '</div></details>'+
+    '</div>';
+  }
+  document.getElementById('pick-list').innerHTML=html;
+}
+
+function renderActive(){
+  if(state.mode==='play') renderPlay();
+  else if(state.mode==='read') renderRead();
+  else renderPick();
+}
+function renderAll(){ renderTabs(); renderActive(); }
+
+/* ---- wiring ---- */
+buildKeyboard();
+
+document.querySelector('.tabs').addEventListener('click', function(e){
+  var t=e.target.closest('.tab'); if(!t) return;
+  state.mode=t.dataset.mode; save(); renderAll();
+});
+document.getElementById('play-horn').addEventListener('change', function(e){ state.playHorn=e.target.value; save(); renderPlay(); });
+document.getElementById('read-horn').addEventListener('change', function(e){ state.readHorn=e.target.value; save(); renderRead(); });
+document.getElementById('read-part').addEventListener('change', function(e){ state.readPart=e.target.value; save(); renderRead(); });
+document.getElementById('pick-part').addEventListener('change', function(e){ state.pickPart=e.target.value; save(); renderPick(); });
+
+function step(which, dir){
+  if(which==='read'){ state.readSig=Math.max(-7,Math.min(7,state.readSig+dir)); renderRead(); }
+  else { state.pickSig=Math.max(-7,Math.min(7,state.pickSig+dir)); renderPick(); }
+  save();
+}
+document.getElementById('read-minus').addEventListener('click', function(){ step('read',-1); });
+document.getElementById('read-plus').addEventListener('click', function(){ step('read', 1); });
+document.getElementById('pick-minus').addEventListener('click', function(){ step('pick',-1); });
+document.getElementById('pick-plus').addEventListener('click', function(){ step('pick', 1); });
+
+document.getElementById('pick-list').addEventListener('click', function(e){
+  var p=e.target.closest('.pin'); if(!p) return;
+  var id=p.dataset.id, i=state.pins.indexOf(id);
+  if(i>=0) state.pins.splice(i,1); else state.pins.push(id);
+  save(); renderPick();
+});
+
+/* ---- share + QR ---- */
+function shareURL(){
+  var base=(location.protocol==='http:'||location.protocol==='https:')
+    ? location.origin.replace(/\/$/,'') : 'https://changekey.to';
+  return base+'/'+buildRoute();
+}
+function renderQR(url){
+  var wrap=document.getElementById('share-qr');
+  if(typeof qrcode==='undefined'){ wrap.innerHTML=''; return; }
+  try{
+    var qr=qrcode(0,'M'); qr.addData(url); qr.make();
+    wrap.innerHTML=qr.createSvgTag({cellSize:4,margin:0,scalable:true})+
+      '<div class="qrcap">Point a phone camera here</div>';
+  }catch(e){ wrap.innerHTML=''; }
+}
+var copyBtn=document.getElementById('share-copy');
+function openShare(){
+  var url=shareURL();
+  var input=document.getElementById('share-url');
+  input.value=url;
+  copyBtn.textContent='Copy'; copyBtn.classList.remove('copied');
+  renderQR(url);
+  document.getElementById('share-overlay').hidden=false;
+}
+function closeShare(){ document.getElementById('share-overlay').hidden=true; }
+document.getElementById('share-open').addEventListener('click', openShare);
+document.getElementById('share-close').addEventListener('click', closeShare);
+document.getElementById('share-overlay').addEventListener('click', function(e){
+  if(e.target===this) closeShare();
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeShare(); });
+copyBtn.addEventListener('click', function(){
+  var input=document.getElementById('share-url'); var url=input.value;
+  function ok(){ copyBtn.textContent='Copied'; copyBtn.classList.add('copied'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok, function(){ input.select(); try{document.execCommand('copy');ok();}catch(e){} });
+  } else { input.select(); try{document.execCommand('copy');ok();}catch(e){} }
+});
+
+/* re-hydrate if the hash is edited or navigated (our own replaceState won't fire this) */
+window.addEventListener('hashchange', function(){
+  if(applyRoute(currentRoute())) renderAll();
+});
+
+urlReady=true;
+renderAll();
+updateURL();
+</script>
+</body>
+</html>
