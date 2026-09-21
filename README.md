@@ -33,8 +33,9 @@ Notes use `b`/`s` for flat/sharp (e.g. `Fs`, `Bb`); key signatures are a count p
 
 ## Files
 
-- `index.html` — the whole app (HTML + CSS + vanilla JS, no dependencies).
-- `qrcode.min.js` — QR generation for the Share panel ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), MIT).
+- `index.html` — the whole app: HTML + CSS + vanilla JS, no dependencies, no build.
+  The Share panel's QR generator ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator),
+  MIT) is inlined so the app is a single self-contained file.
 - `_redirects` — SPA fallback so pretty paths (`/Bb`) resolve on Cloudflare Pages / Netlify.
 
 ## Deploy
