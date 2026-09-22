@@ -39,6 +39,35 @@ Notes use `b`/`s` for flat/sharp (e.g. `Fs`, `Bb`); key signatures are a count p
   MIT) is inlined so the app is a single self-contained file.
 - `_redirects` — SPA fallback so pretty paths (`/Bb`) resolve on Cloudflare Pages / Netlify.
 
+## Adding or editing instruments
+
+Instruments live in one place: the `CATALOG` array near the top of the `<script>`
+in `index.html` (search for **"INSTRUMENTS — contributions welcome"**). Both the
+Play and Pick views read from it, so an edit shows up everywhere. No build step —
+edit, save, open `index.html`.
+
+Each transposition (`C`, `B♭`, `A`, `E♭`, `F`, `G`, `D`) has an `insts` list. To add
+or fix an instrument, edit the matching one. An instrument looks like:
+
+```js
+{ n:'alto sax', sound:-9, lo:'Db3', hi:'Ab5', less:true }
+```
+
+- **`n`** — display name.
+- **`sound`** — how far it *sounds* from the written note, in semitones (`−` = lower).
+  B♭ clarinet/trumpet `-2`, tenor sax/bass clarinet `-14` (an octave lower),
+  French horn `-7`, alto sax `-9`, bari sax `-21`, E♭ sopranino clarinet `+3`.
+  It must belong to that key's class — `sound` mod 12 is the same for every
+  instrument in a key (every B♭ instrument is `-2`, `-14`, `-26`, …).
+- **`lo` / `hi`** — lowest / highest *concert* (sounding) note it can play, as a name
+  like `'D3'` or `'Bb6'` (`b` = flat, `#` = sharp). Used to grey out out-of-range
+  results in Advanced mode. Approximate is fine.
+- **`less`** — optional; `true` for rare/historical instruments (shown after
+  "Less common:").
+
+Leave each key's `shift` value alone — it's the pitch-class transposition and stays
+fixed when you add instruments to an existing key.
+
 ## Deploy
 
 Static hosting, no backend. On Cloudflare Pages the `_redirects` file makes the

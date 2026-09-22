@@ -304,38 +304,58 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 <script>
 "use strict";
 
-// One entry per transposition. `shift` is the signed semitone move from concert to written
-// pitch (written above concert = positive) — the pitch-class transposition used for keys.
-// `insts` is the single instrument list both Play and Pick draw from: each has `n` (name),
-// `sound` (full written->sounding transposition incl. octaves, so range/register are exact),
-// `lo`/`hi` (concert sounding range in MIDI, C4=60), and optional `less` (less common).
+// ─────────────────────────────────────────────────────────────────────────────
+//  INSTRUMENTS  —  contributions welcome! Edit the matching transposition below.
+//
+//  Each instrument is:   { n:'alto sax', sound:-9, lo:'Db3', hi:'Ab5', less:true }
+//    n      display name.
+//    sound  how far it SOUNDS from the written note, in semitones (− = lower).
+//           B♭ clarinet/trumpet = -2, tenor sax/bass clarinet = -14 (an 8ve lower),
+//           French horn in F = -7, alto sax = -9, bari sax = -21, E♭ clarinet = +3.
+//           It must belong to this key's class, i.e. sound mod 12 is the same for
+//           every instrument here (a B♭ instrument is -2, -14, -26 …).
+//    lo/hi  lowest / highest CONCERT (sounding) note, as a name like 'D3' or 'Bb6'
+//           (use b for flat, # for sharp). Used to grey out out-of-range results.
+//    less   optional; true for rare/historical instruments (listed after "Less common:").
+//
+//  `shift` is the key's pitch-class transposition (= −sound of the main instrument,
+//  mod 12). Leave it as-is when adding instruments to an existing key.
+// ─────────────────────────────────────────────────────────────────────────────
 var CATALOG = [
   {id:'c',  key:'C',   shift:0,  insts:[
-     {n:'flute',sound:0,lo:59,hi:96},{n:'oboe',sound:0,lo:58,hi:91},{n:'bassoon',sound:0,lo:34,hi:75},
-     {n:'strings',sound:0,lo:28,hi:100},{n:'trombone',sound:0,lo:40,hi:72},{n:'euphonium',sound:0,lo:37,hi:72},
-     {n:'tuba',sound:0,lo:26,hi:65},{n:'piano',sound:0,lo:21,hi:108}]},
+     {n:'flute',sound:0,lo:'B3',hi:'C7'},{n:'oboe',sound:0,lo:'Bb3',hi:'G6'},{n:'bassoon',sound:0,lo:'Bb1',hi:'Eb5'},
+     {n:'strings',sound:0,lo:'E1',hi:'E7'},{n:'trombone',sound:0,lo:'E2',hi:'C5'},{n:'euphonium',sound:0,lo:'Db2',hi:'C5'},
+     {n:'tuba',sound:0,lo:'D1',hi:'F4'},{n:'piano',sound:0,lo:'A0',hi:'C8'}]},
   {id:'bb', key:'B♭', shift:2,  insts:[
-     {n:'clarinet',sound:-2,lo:50,hi:94},{n:'trumpet',sound:-2,lo:54,hi:86},{n:'cornet',sound:-2,lo:54,hi:86},
-     {n:'soprano sax',sound:-2,lo:56,hi:88},{n:'flugelhorn',sound:-2,lo:54,hi:84},
-     {n:'tenor sax',sound:-14,lo:44,hi:76},{n:'bass clarinet',sound:-14,lo:34,hi:79},
-     {n:'baritone',sound:-14,lo:40,hi:70},{n:'euphonium (treble)',sound:-14,lo:37,hi:70},
-     {n:'B♭ tuba',sound:-26,lo:24,hi:58}]},
+     {n:'clarinet',sound:-2,lo:'D3',hi:'Bb6'},{n:'trumpet',sound:-2,lo:'F#3',hi:'D6'},{n:'cornet',sound:-2,lo:'F#3',hi:'D6'},
+     {n:'soprano sax',sound:-2,lo:'Ab3',hi:'E6'},{n:'flugelhorn',sound:-2,lo:'F#3',hi:'C6'},
+     {n:'tenor sax',sound:-14,lo:'Ab2',hi:'E5'},{n:'bass clarinet',sound:-14,lo:'Bb1',hi:'G5'},
+     {n:'baritone',sound:-14,lo:'E2',hi:'Bb4'},{n:'euphonium (treble)',sound:-14,lo:'Db2',hi:'Bb4'},
+     {n:'B♭ tuba',sound:-26,lo:'D1',hi:'Bb3'}]},
   {id:'a',  key:'A',   shift:3,  insts:[
-     {n:'clarinet in A',sound:-3,lo:47,hi:91},
-     {n:'oboe d’amore',sound:-3,lo:55,hi:86,less:true},
-     {n:'piccolo trumpet in A',sound:9,lo:66,hi:98,less:true}]},
+     {n:'clarinet in A',sound:-3,lo:'B2',hi:'G6'},
+     {n:'oboe d’amore',sound:-3,lo:'G3',hi:'D6',less:true},
+     {n:'piccolo trumpet in A',sound:9,lo:'F#4',hi:'D7',less:true}]},
   {id:'eb', key:'E♭', shift:-3, insts:[
-     {n:'E♭ sopranino clarinet',sound:3,lo:55,hi:96},
-     {n:'alto sax',sound:-9,lo:49,hi:80},{n:'tenor horn',sound:-9,lo:45,hi:75},
-     {n:'bari sax',sound:-21,lo:37,hi:69},{n:'E♭ tuba',sound:-33,lo:20,hi:51},
-     {n:'alto clarinet',sound:-9,lo:43,hi:87,less:true},{n:'E♭ cornet',sound:3,lo:56,hi:84,less:true}]},
+     {n:'E♭ sopranino clarinet',sound:3,lo:'G3',hi:'C7'},
+     {n:'alto sax',sound:-9,lo:'Db3',hi:'Ab5'},{n:'tenor horn',sound:-9,lo:'A2',hi:'Eb5'},
+     {n:'bari sax',sound:-21,lo:'Db2',hi:'A4'},{n:'E♭ tuba',sound:-33,lo:'Ab0',hi:'Eb3'},
+     {n:'alto clarinet',sound:-9,lo:'G2',hi:'Eb6',less:true},{n:'E♭ cornet',sound:3,lo:'Ab3',hi:'C6',less:true}]},
   {id:'f',  key:'F',   shift:7,  insts:[
-     {n:'French horn',sound:-7,lo:41,hi:77},{n:'English horn',sound:-7,lo:52,hi:81},
-     {n:'mellophone',sound:-7,lo:48,hi:77},{n:'basset horn',sound:-7,lo:41,hi:84,less:true}]},
-  {id:'g',  key:'G',   shift:5,  insts:[{n:'alto flute',sound:-5,lo:55,hi:91}]},
+     {n:'French horn',sound:-7,lo:'F2',hi:'F5'},{n:'English horn',sound:-7,lo:'E3',hi:'A5'},
+     {n:'mellophone',sound:-7,lo:'C3',hi:'F5'},{n:'basset horn',sound:-7,lo:'F2',hi:'C6',less:true}]},
+  {id:'g',  key:'G',   shift:5,  insts:[{n:'alto flute',sound:-5,lo:'G3',hi:'G6'}]},
   {id:'d',  key:'D',   shift:-2, insts:[
-     {n:'clarinet in D',sound:2,lo:52,hi:96,less:true},{n:'trumpet in D',sound:2,lo:56,hi:86,less:true}]}
+     {n:'clarinet in D',sound:2,lo:'E3',hi:'C7',less:true},{n:'trumpet in D',sound:2,lo:'Ab3',hi:'D6',less:true}]}
 ];
+// note name (e.g. "Bb6", "F#3") -> MIDI number (C4 = 60), so the list above stays readable.
+function nm(s){
+  s=String(s).trim();
+  var pc={c:0,d:2,e:4,f:5,g:7,a:9,b:11}[s[0].toLowerCase()], i=1;
+  for(; i<s.length && /[b#sf]/i.test(s[i]); i++){ var c=s[i].toLowerCase(); pc += (c==='b'||c==='f')?-1:1; }
+  return (parseInt(s.slice(i),10)+1)*12 + pc;
+}
+CATALOG.forEach(function(cl){ cl.insts.forEach(function(it){ it.lo=nm(it.lo); it.hi=nm(it.hi); }); });
 // Pick's example text, derived from `insts` so Play and Pick always agree.
 function exList(insts){
   var common=[], less=[];
