@@ -72,9 +72,20 @@ fixed when you add instruments to an existing key.
 
 ## Deploy
 
-Static hosting, no backend. Deployed as a Cloudflare Worker with static assets
-(`wrangler.toml`); its single-page-application not-found handling makes the pretty
-paths (`/Bb`) resolve. On any other static host the `#hash` form works with no config.
+Deployed as a Cloudflare **Worker with static assets** — no server code, no build step.
+`wrangler.toml` points the Worker at the repo root (`[assets] directory = "."`) and sets
+`not_found_handling = "single-page-application"` so pretty paths like `/Bb` serve
+`index.html`; `.assetsignore` keeps repo-root files (README, config) from being served.
+
+Hosting is via **Workers Builds** connected to this GitHub repo:
+
+- pushes to `main` deploy to production (`changekey.to`);
+- pushes to any other branch create a preview version with its own `*.workers.dev`
+  preview URL, listed under Workers & Pages → the project → **Deployments**.
+
+Locally, just open `index.html` in a browser — no server needed. To serve it exactly the
+way Cloudflare does (SPA routing included), run `npx wrangler dev`. On any other static
+host the `#hash` form of the links works with no configuration.
 
 ## Credits
 
