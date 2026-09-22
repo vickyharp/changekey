@@ -297,38 +297,53 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 <script>
 "use strict";
 
-// One row per transposition. Bass B-flat reads like soprano B-flat, and the E-flat
-// sopranino and alto share pitch class and key signature — they differ only by octave,
-// which this app never shows — so each transposition is a single entry. `shift` is the
-// signed semitone move from concert to written pitch (positive = written above concert).
-// One row per transposition (bass B♭ reads like soprano B♭; E♭ sopranino and alto share a
-// key signature — they differ only by octave, which this app never shows). Within a row,
-// rare instruments follow a "Less common:" note. `shift` is the signed semitone move from
-// concert to written pitch (written above concert = positive).
-// `voices` are the octave-variant groups within a transposition (same key/pitch class,
-// different register). `sound` is the full written->sounding transposition in semitones
-// (incl. octaves), highest-sounding group first. Used only by Advanced mode.
+// One entry per transposition. `shift` is the signed semitone move from concert to written
+// pitch (written above concert = positive) — the pitch-class transposition used for keys.
+// `insts` is the single instrument list both Play and Pick draw from: each has `n` (name),
+// `sound` (full written->sounding transposition incl. octaves, so range/register are exact),
+// `lo`/`hi` (concert sounding range in MIDI, C4=60), and optional `less` (less common).
 var CATALOG = [
-  {id:'c',  key:'C',   shift:0,  ex:'Flute, oboe, bassoon, strings, trombone, euphonium, tuba, piano',
-     voices:[{who:'flute, oboe, bassoon, strings, trombone, tuba', sound:0}]},
-  {id:'bb', key:'B♭', shift:2,  ex:'Trumpet, cornet, clarinet, tenor/soprano sax, flugelhorn, bass clarinet, brass-band baritone/euphonium/B♭ tuba',
-     voices:[
-       {sound:-2, insts:[{n:'clarinet',lo:50,hi:94},{n:'trumpet',lo:54,hi:86},{n:'cornet',lo:54,hi:86},{n:'soprano sax',lo:56,hi:88},{n:'flugelhorn',lo:54,hi:84}]},
-       {sound:-14, insts:[{n:'tenor sax',lo:44,hi:76},{n:'bass clarinet',lo:34,hi:79}]}]},
-  {id:'a',  key:'A',   shift:3,  ex:'Clarinet in A. Less common: oboe d’amore, piccolo trumpet in A',
-     voices:[{who:'clarinet in A', sound:-3}]},
-  {id:'eb', key:'E♭', shift:-3, ex:'E♭ sopranino clarinet, alto/bari sax, brass-band tenor horn, E♭ tuba. Less common: alto clarinet, E♭ cornet',
-     voices:[
-       {sound:3, insts:[{n:'E♭ sopranino clarinet',lo:55,hi:96},{n:'E♭ cornet',lo:56,hi:84}]},
-       {sound:-9, insts:[{n:'alto sax',lo:49,hi:80},{n:'alto clarinet',lo:43,hi:87},{n:'tenor horn',lo:45,hi:75}]},
-       {sound:-21, insts:[{n:'bari sax',lo:37,hi:69},{n:'contra-alto clarinet',lo:27,hi:63}]}]},
-  {id:'f',  key:'F',   shift:7,  ex:'French horn, English horn, mellophone. Less common: basset horn',
-     voices:[{who:'French horn, English horn, mellophone', sound:-7}]},
-  {id:'g',  key:'G',   shift:5,  ex:'Alto flute',
-     voices:[{who:'alto flute', sound:-5}]},
-  {id:'d',  key:'D',   shift:-2, ex:'Less common: clarinet or trumpet in D',
-     voices:[{who:'clarinet or trumpet in D', sound:2}]}
+  {id:'c',  key:'C',   shift:0,  insts:[
+     {n:'flute',sound:0,lo:59,hi:96},{n:'oboe',sound:0,lo:58,hi:91},{n:'bassoon',sound:0,lo:34,hi:75},
+     {n:'strings',sound:0,lo:28,hi:100},{n:'trombone',sound:0,lo:40,hi:72},{n:'euphonium',sound:0,lo:37,hi:72},
+     {n:'tuba',sound:0,lo:26,hi:65},{n:'piano',sound:0,lo:21,hi:108}]},
+  {id:'bb', key:'B♭', shift:2,  insts:[
+     {n:'clarinet',sound:-2,lo:50,hi:94},{n:'trumpet',sound:-2,lo:54,hi:86},{n:'cornet',sound:-2,lo:54,hi:86},
+     {n:'soprano sax',sound:-2,lo:56,hi:88},{n:'flugelhorn',sound:-2,lo:54,hi:84},
+     {n:'tenor sax',sound:-14,lo:44,hi:76},{n:'bass clarinet',sound:-14,lo:34,hi:79},
+     {n:'baritone',sound:-14,lo:40,hi:70},{n:'euphonium (treble)',sound:-14,lo:37,hi:70},
+     {n:'B♭ tuba',sound:-26,lo:24,hi:58}]},
+  {id:'a',  key:'A',   shift:3,  insts:[
+     {n:'clarinet in A',sound:-3,lo:47,hi:91},
+     {n:'oboe d’amore',sound:-3,lo:55,hi:86,less:true},
+     {n:'piccolo trumpet in A',sound:9,lo:66,hi:98,less:true}]},
+  {id:'eb', key:'E♭', shift:-3, insts:[
+     {n:'E♭ sopranino clarinet',sound:3,lo:55,hi:96},
+     {n:'alto sax',sound:-9,lo:49,hi:80},{n:'tenor horn',sound:-9,lo:45,hi:75},
+     {n:'bari sax',sound:-21,lo:37,hi:69},{n:'E♭ tuba',sound:-33,lo:20,hi:51},
+     {n:'alto clarinet',sound:-9,lo:43,hi:87,less:true},{n:'E♭ cornet',sound:3,lo:56,hi:84,less:true}]},
+  {id:'f',  key:'F',   shift:7,  insts:[
+     {n:'French horn',sound:-7,lo:41,hi:77},{n:'English horn',sound:-7,lo:52,hi:81},
+     {n:'mellophone',sound:-7,lo:48,hi:77},{n:'basset horn',sound:-7,lo:41,hi:84,less:true}]},
+  {id:'g',  key:'G',   shift:5,  insts:[{n:'alto flute',sound:-5,lo:55,hi:91}]},
+  {id:'d',  key:'D',   shift:-2, insts:[
+     {n:'clarinet in D',sound:2,lo:52,hi:96,less:true},{n:'trumpet in D',sound:2,lo:56,hi:86,less:true}]}
 ];
+// Pick's example text, derived from `insts` so Play and Pick always agree.
+function exList(insts){
+  var common=[], less=[];
+  for(var i=0;i<insts.length;i++)(insts[i].less?less:common).push(insts[i].n);
+  var s=common.join(', ');
+  if(less.length) s=(s?s+'. Less common: ':'Less common: ')+less.join(', ');
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+// Group a class's instruments by octave (sound), highest-sounding first — the Advanced block.
+function groupsOf(insts){
+  var map={}, order=[];
+  for(var i=0;i<insts.length;i++){ var k=insts[i].sound; if(!(k in map)){ map[k]=[]; order.push(k); } map[k].push(insts[i]); }
+  order.sort(function(a,b){ return b-a; });
+  return order.map(function(k){ return {sound:Number(k), insts:map[k]}; });
+}
 function inst(id){ for(var i=0;i<CATALOG.length;i++) if(CATALOG[i].id===id) return CATALOG[i]; return CATALOG[1]; }
 
 var SHARP=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
@@ -627,7 +642,8 @@ function renderPlay(){
   // clarinet neither plays nor sounds the same octave as the soprano), so the headline stays
   // a pitch class and the per-instrument octaves live in the block. Only single-instrument
   // classes have one unambiguous octave.
-  var multi=h.voices && h.voices.length>1;
+  var groups=groupsOf(h.insts);   // octave-variant groups, highest-sounding first
+  var multi=groups.length>1;
   var showOct=state.advanced && !multi;
   var bigLabel=showOct ? noteOct(mainMidi, true) : sp.main;
 
@@ -649,13 +665,14 @@ function renderPlay(){
 
   // Advanced: "where it sounds" per octave-variant group (framing B — same read, the low
   // instruments simply land an octave or more below).
+  // Advanced: the instrument reference block, shown for every class (single-octave classes
+  // get one row). Written branch: one written note in, varied soundings (framing B). Concert
+  // branch: one sounding note in, varied written notes (framing A).
   var voicesHtml='';
-  if(state.advanced && h.voices && h.voices.length>1){
-    // Written branch: one written note in, varied soundings (framing B).
-    // Concert branch: one sounding note in, varied written notes (framing A).
+  if(state.advanced){
     var rows='';
-    for(var v=0;v<h.voices.length;v++){
-      var vc=h.voices[v];
+    for(var v=0;v<groups.length;v++){
+      var vc=groups[v];
       var wM, sM;
       if(hear){ wM=writtenMidi; sM=writtenMidi + vc.sound; }
       else { sM=concertMidi; wM=concertMidi - vc.sound; }
@@ -784,7 +801,7 @@ function renderPick(){
       '<div class="horn-head">'+
         '<button class="pin" data-id="'+H.id+'" aria-pressed="'+(x.pinned?'true':'false')+
           '" aria-label="Pin '+H.key+'">'+(x.pinned?'★':'☆')+'</button>'+
-        '<div><div class="horn-name">'+H.key+'</div><div class="horn-ex">'+H.ex+'</div>'+
+        '<div><div class="horn-name">'+H.key+'</div><div class="horn-ex">'+exList(H.insts)+'</div>'+
           (x.asWritten?'<span class="badge">no transposing</span>':'')+'</div>'+
         '<div class="horn-right"><div class="horn-count">'+sigText(x.readF)+'</div>'+
           '<div class="horn-shift">'+shiftTxt+'</div></div>'+
