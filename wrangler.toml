@@ -1,0 +1,7 @@
+# Cloudflare Pages build configuration.
+# This is a static site with no build step: the "build output" is the repo root
+# itself (index.html + _redirects). This tells Pages/Workers Builds where the
+# assets are, which resolves "Missing entry-point to Worker script or to assets
+# directory". `name` must match your Pages project name.
+name = "changekey"
+pages_build_output_dir = "."
