@@ -1,7 +1,0 @@
-# SPA fallback for Cloudflare Pages.
-# Any path that isn't a real file (e.g. /Bb, /Bb/from/A/2b) serves the root
-# app with a 200, so the pretty URL stays in the bar and index.html hydrates it.
-# The target is "/" rather than "/index.html": Cloudflare Pages auto-strips
-# ".html" and "/index" from URLs, and a rewrite target containing either trips
-# its infinite-loop detector (error 100324). "/" contains neither, so it's safe.
-/*  /  200

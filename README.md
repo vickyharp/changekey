@@ -37,7 +37,9 @@ Notes use `b`/`s` for flat/sharp (e.g. `Fs`, `Bb`); key signatures are a count p
 - `index.html` — the whole app: HTML + CSS + vanilla JS, no dependencies, no build.
   The Share panel's QR generator ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator),
   MIT) is inlined so the app is a single self-contained file.
-- `_redirects` — SPA fallback so pretty paths (`/Bb`) resolve on Cloudflare Pages / Netlify.
+- `wrangler.toml` — Cloudflare Worker (static assets) config; `not_found_handling =
+  "single-page-application"` serves `index.html` for pretty paths like `/Bb`.
+- `.assetsignore` — repo-root files that shouldn't be served.
 
 ## Adding or editing instruments
 
@@ -70,8 +72,9 @@ fixed when you add instruments to an existing key.
 
 ## Deploy
 
-Static hosting, no backend. On Cloudflare Pages the `_redirects` file makes the
-pretty paths work; on any static host the `#hash` form works with no config.
+Static hosting, no backend. Deployed as a Cloudflare Worker with static assets
+(`wrangler.toml`); its single-page-application not-found handling makes the pretty
+paths (`/Bb`) resolve. On any other static host the `#hash` form works with no config.
 
 ## Credits
 

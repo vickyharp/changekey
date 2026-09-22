@@ -1,7 +1,11 @@
-# Cloudflare Pages build configuration.
-# This is a static site with no build step: the "build output" is the repo root
-# itself (index.html + _redirects). This tells Pages/Workers Builds where the
-# assets are, which resolves "Missing entry-point to Worker script or to assets
-# directory". `name` must match your Pages project name.
+# Cloudflare Worker (static assets only) — no server code, just files.
+# `[assets].directory = "."` is the entry point the build was missing.
+# `not_found_handling = "single-page-application"` serves index.html (200) for any
+# unknown path (e.g. /Bb, /Bb/from/A/2b), so it replaces the old _redirects hack.
+# `name` must match your Cloudflare project/Worker name.
 name = "changekey"
-pages_build_output_dir = "."
+compatibility_date = "2024-11-01"
+
+[assets]
+directory = "."
+not_found_handling = "single-page-application"

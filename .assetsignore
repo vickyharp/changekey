@@ -1,0 +1,5 @@
+# Files in the repo root that should NOT be served as part of the site.
+wrangler.toml
+.assetsignore
+README.md
+.gitignore
