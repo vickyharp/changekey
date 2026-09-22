@@ -281,6 +281,12 @@ var INTERVAL=['unison','minor 2nd','major 2nd','minor 3rd','major 3rd','perfect 
   'tritone','perfect 5th','minor 6th','major 6th','minor 7th','major 7th','octave'];
 var FIFTH_NAME={'-7':'C♭','-6':'G♭','-5':'D♭','-4':'A♭','-3':'E♭',
   '-2':'B♭','-1':'F','0':'C','1':'G','2':'D','3':'A','4':'E','5':'B','6':'F♯','7':'C♯'};
+// relative minor sharing each signature (same fifths value)
+var FIFTH_MINOR={'-7':'A♭','-6':'E♭','-5':'B♭','-4':'F','-3':'C',
+  '-2':'G','-1':'D','0':'A','1':'E','2':'B','3':'F♯','4':'C♯','5':'G♯','6':'D♯','7':'A♯'};
+// "X major / Y minor" — a key signature is shared by both, which is why major/minor
+// never affects the transposition.
+function keyName(f){ return FIFTH_NAME[f]+' major / '+FIFTH_MINOR[f]+' minor'; }
 var SHARP_ORDER=['F♯','C♯','G♯','D♯','A♯','E♯','B♯'];
 var FLAT_ORDER =['B♭','E♭','A♭','D♭','G♭','C♭','F♭'];
 
@@ -547,7 +553,7 @@ function renderPlay(){
 
 function renderSig(nEl, nameEl, f){
   nEl.textContent=sigText(f);
-  nameEl.textContent=f===0?'C major / A minor':(FIFTH_NAME[f]+' major');
+  nameEl.textContent=keyName(f);
 }
 
 function renderRead(){
@@ -576,13 +582,13 @@ function renderRead(){
     '<div class="cap">Read this part in</div>'+
     staffSVG(readF, 74)+
     '<div class="name" style="font-size:18px;color:var(--text)">'+sigText(readF)+' · '+
-      (readF===0?'C major / A minor':FIFTH_NAME[readF]+' major')+'</div>'+
+      keyName(readF)+'</div>'+
     '<div class="sub" style="margin-top:14px">'+shiftLine+'</div>'+
     '<details><summary>Full breakdown</summary>'+
       '<div class="kv"><span class="k">Concert key (how it sounds)</span><span class="v">'+
-        sigText(concertF)+' · '+(concertF===0?'C major':FIFTH_NAME[concertF]+' major')+'</span></div>'+
+        sigText(concertF)+' · '+keyName(concertF)+'</span></div>'+
       '<div class="kv"><span class="k">You read in</span><span class="v">'+
-        sigText(readF)+' · '+(readF===0?'C major':FIFTH_NAME[readF]+' major')+'</span></div>'+
+        sigText(readF)+' · '+keyName(readF)+'</span></div>'+
       '<div class="kv"><span class="k">Accidentals to read</span><span class="v">'+accidentalList(readF)+'</span></div>'+
       '<div class="kv"><span class="k">Live transposition</span><span class="v">'+
         (deltaR===0?'as written':(deltaR>0?'up ':'down ')+Math.abs(deltaR)+' semitone'+(Math.abs(deltaR)===1?'':'s')+
@@ -602,7 +608,7 @@ function renderPick(){
   var Wf=state.pickSig;
   var concertF=reduceFifths(Wf - part.shift*7);
   document.getElementById('pick-concert').innerHTML=
-    'This part sounds in <strong>'+(concertF===0?'C major':FIFTH_NAME[concertF]+' major')+
+    'This part sounds in <strong>'+keyName(concertF)+
     '</strong> ('+sigText(concertF)+')';
 
   var rows=[];
@@ -638,7 +644,7 @@ function renderPick(){
       '<details><summary>Details</summary><div class="inner">'+
         staffSVG(x.readF,44)+
         '<div class="kv"><span class="k">Read in</span><span class="v">'+sigText(x.readF)+' · '+
-          (x.readF===0?'C major':FIFTH_NAME[x.readF]+' major')+'</span></div>'+
+          keyName(x.readF)+'</span></div>'+
         '<div class="kv"><span class="k">Accidentals</span><span class="v">'+accidentalList(x.readF)+'</span></div>'+
         '<div class="kv"><span class="k">Live transposition</span><span class="v">'+shiftTxt+
           (x.asWritten?'':' · '+intervalName(x.deltaR))+'</span></div>'+
