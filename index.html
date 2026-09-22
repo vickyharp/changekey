@@ -154,6 +154,24 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   .horn details{border-top:1px solid var(--border);margin:0;padding:0}
   .horn summary{padding:9px 14px}
   .horn .inner{padding:0 14px 12px}
+  /* advanced mode: toggle, octave picker, voices block */
+  .brand-actions{display:flex;gap:8px;align-items:center}
+  .sharebtn.adv[aria-pressed="true"]{background:var(--accent-bg);border-color:var(--accent-bg);color:var(--accent-text)}
+  .prompt-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .oct{display:flex;align-items:center;gap:6px}
+  .oct[hidden]{display:none}
+  .oct-label{font-size:12px;color:var(--muted)}
+  .oct-btn{appearance:none;border:1px solid var(--border);background:var(--card);color:var(--text);
+    font:inherit;font-size:18px;line-height:1;width:34px;height:34px;border-radius:8px;cursor:pointer}
+  .oct-btn:active{background:var(--card2)}
+  .oct-val{font-size:15px;font-weight:500;min-width:18px;text-align:center}
+  .voices{margin-top:16px;border-top:1px solid var(--border);padding-top:12px;text-align:left}
+  .voices-h{font-size:12px;color:var(--muted);margin:0 0 8px}
+  .voice{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:7px 0;border-bottom:1px solid var(--border)}
+  .voice:last-child{border-bottom:0}
+  .voice-who{color:var(--text)}
+  .voice-snd{font-weight:500;text-align:right;white-space:nowrap}
+  .voice-snd .flag{font-weight:400;font-size:12px;color:var(--faint)}
 </style>
 </head>
 <body>
@@ -161,11 +179,14 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 <header>
   <div class="brandrow">
     <p class="brand">changekey<span class="tld">.to</span></p>
+    <div class="brand-actions">
+    <button class="sharebtn adv" id="adv-toggle" aria-pressed="false" aria-label="Toggle advanced mode">Advanced</button>
     <button class="sharebtn" id="share-open" aria-label="Share this view">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
         <line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>Share</button>
+    </div>
   </div>
   <div class="tabs" role="tablist" aria-label="Mode">
     <button class="tab" role="tab" id="tab-play" aria-selected="true" data-mode="play">Play</button>
@@ -185,7 +206,15 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     <button class="segbtn" type="button" role="tab" data-dir="play" aria-selected="true">Concert</button>
     <button class="segbtn" type="button" role="tab" data-dir="hear" aria-selected="false">Your note</button>
   </div>
-  <p class="prompt" id="play-prompt">Tap the concert pitch</p>
+  <div class="prompt-row">
+    <p class="prompt" id="play-prompt">Tap the concert pitch</p>
+    <div class="oct" id="play-oct" hidden>
+      <span class="oct-label">Octave</span>
+      <button class="oct-btn" id="oct-minus" type="button" aria-label="Lower octave">&minus;</button>
+      <span class="oct-val" id="oct-val">4</span>
+      <button class="oct-btn" id="oct-plus" type="button" aria-label="Higher octave">+</button>
+    </div>
+  </div>
   <div class="kb-acc" id="play-acc"></div>
   <div class="kb-nat" id="play-nat"></div>
   <div class="result" id="play-result"></div>
@@ -268,14 +297,24 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 // key signature — they differ only by octave, which this app never shows). Within a row,
 // rare instruments follow a "Less common:" note. `shift` is the signed semitone move from
 // concert to written pitch (written above concert = positive).
+// `voices` are the octave-variant groups within a transposition (same key/pitch class,
+// different register). `sound` is the full written->sounding transposition in semitones
+// (incl. octaves), highest-sounding group first. Used only by Advanced mode.
 var CATALOG = [
-  {id:'c',  key:'C',   shift:0,  ex:'Flute, oboe, bassoon, strings, trombone, euphonium, tuba, piano'},
-  {id:'bb', key:'B♭', shift:2,  ex:'Trumpet, cornet, clarinet, tenor/soprano sax, flugelhorn, bass clarinet, brass-band baritone/euphonium/B♭ tuba'},
-  {id:'a',  key:'A',   shift:3,  ex:'Clarinet in A. Less common: oboe d’amore, piccolo trumpet in A'},
-  {id:'eb', key:'E♭', shift:-3, ex:'E♭ sopranino clarinet, alto/bari sax, brass-band tenor horn, E♭ tuba. Less common: alto clarinet, E♭ cornet'},
-  {id:'f',  key:'F',   shift:7,  ex:'French horn, English horn, mellophone. Less common: basset horn'},
-  {id:'g',  key:'G',   shift:5,  ex:'Alto flute'},
-  {id:'d',  key:'D',   shift:-2, ex:'Less common: clarinet or trumpet in D'}
+  {id:'c',  key:'C',   shift:0,  ex:'Flute, oboe, bassoon, strings, trombone, euphonium, tuba, piano',
+     voices:[{who:'flute, oboe, bassoon, strings, trombone, tuba', sound:0}]},
+  {id:'bb', key:'B♭', shift:2,  ex:'Trumpet, cornet, clarinet, tenor/soprano sax, flugelhorn, bass clarinet, brass-band baritone/euphonium/B♭ tuba',
+     voices:[{who:'clarinet, trumpet, cornet, soprano sax, flugelhorn', sound:-2},{who:'tenor sax, bass clarinet', sound:-14}]},
+  {id:'a',  key:'A',   shift:3,  ex:'Clarinet in A. Less common: oboe d’amore, piccolo trumpet in A',
+     voices:[{who:'clarinet in A', sound:-3}]},
+  {id:'eb', key:'E♭', shift:-3, ex:'E♭ sopranino clarinet, alto/bari sax, brass-band tenor horn, E♭ tuba. Less common: alto clarinet, E♭ cornet',
+     voices:[{who:'E♭ sopranino clarinet, E♭ cornet', sound:3},{who:'alto sax, alto clarinet, tenor horn', sound:-9},{who:'bari sax, contra-alto clarinet', sound:-21}]},
+  {id:'f',  key:'F',   shift:7,  ex:'French horn, English horn, mellophone. Less common: basset horn',
+     voices:[{who:'French horn, English horn, mellophone', sound:-7}]},
+  {id:'g',  key:'G',   shift:5,  ex:'Alto flute',
+     voices:[{who:'alto flute', sound:-5}]},
+  {id:'d',  key:'D',   shift:-2, ex:'Less common: clarinet or trumpet in D',
+     voices:[{who:'clarinet or trumpet in D', sound:2}]}
 ];
 function inst(id){ for(var i=0;i<CATALOG.length;i++) if(CATALOG[i].id===id) return CATALOG[i]; return CATALOG[1]; }
 
@@ -300,6 +339,11 @@ function spell(pc, preferFlat){
   var s=SHARP[pc], fl=FLAT[pc];
   if(s===fl) return {main:s, alt:null};
   return preferFlat ? {main:fl, alt:s} : {main:s, alt:fl};
+}
+// scientific pitch from a MIDI number (C4 = 60), e.g. 57 -> "A3"
+function noteOct(midi, preferFlat){
+  var pc=((midi%12)+12)%12, oct=Math.floor(midi/12)-1;
+  return spell(pc, preferFlat).main+oct;
 }
 function intervalName(semi){
   var a=Math.abs(semi); var base=a%12; var name=(a>0 && base===0)?'octave':INTERVAL[base];
@@ -357,8 +401,8 @@ function staffSVG(f, h){
 /* ---- state + persistence ---- */
 // `instrument` is the single "horn in hand," shared by Play and Read. (`readPart`
 // and `pickPart` are a different thing: the instrument a part is written for.)
-var state={mode:'play', pins:[], instrument:'bb', playPc:0, playDir:'play', readPart:'a',
-  readSig:-2, pickPart:'a', pickSig:-2};
+var state={mode:'play', pins:[], instrument:'bb', playPc:0, playDir:'play', playOct:4,
+  advanced:false, readPart:'a', readSig:-2, pickPart:'a', pickSig:-2};
 function load(){
   try{
     var raw=localStorage.getItem('transpose.v1');
@@ -534,14 +578,26 @@ function renderPlay(){
     dbtns[d].setAttribute('aria-selected', dbtns[d].dataset.dir===state.playDir?'true':'false');
   document.getElementById('play-prompt').textContent=hear?'Tap the note you play':'Tap the concert pitch';
 
+  // octave picker (advanced only)
+  document.getElementById('play-oct').hidden=!state.advanced;
+  document.getElementById('oct-val').textContent=state.playOct;
+
   var keys=document.querySelectorAll('#panel-play .key');
   for(var i=0;i<keys.length;i++)
     keys[i].setAttribute('aria-pressed', parseInt(keys[i].dataset.pc,10)===state.playPc?'true':'false');
 
   var h=inst(state.instrument);
-  // Concert->note adds the shift; note->concert removes it.
-  var outPc=hear ? mod12(state.playPc - h.shift) : mod12(state.playPc + h.shift);
-  var sp=spell(outPc, true);
+  // Work in MIDI so octaves are exact. The tapped note + octave is the input, in whichever
+  // currency the direction toggle selects; concert->written adds the shift, written->concert
+  // removes it. The main answer is a pitch class (with octave when advanced).
+  var inMidi=(state.playOct+1)*12 + state.playPc;
+  var concertMidi, writtenMidi;
+  if(hear){ writtenMidi=inMidi; concertMidi=inMidi - h.shift; }
+  else { concertMidi=inMidi; writtenMidi=inMidi + h.shift; }
+  var mainMidi=hear ? concertMidi : writtenMidi;
+  var sp=spell(mod12(mainMidi), true);
+  var bigLabel=state.advanced ? noteOct(mainMidi, true) : sp.main;
+
   // The relationship "your note vs concert" is fixed (= shift), so this line reads the
   // same in both directions.
   var sub, tert='';
@@ -557,11 +613,32 @@ function renderPlay(){
     tert='or '+b.n+' semitones '+b.dir+' · a '+intervalName(b.n);
   }
   if(sp.alt) tert=(tert?tert+' · ':'')+'also written '+sp.alt;
+
+  // Advanced: "where it sounds" per octave-variant group (framing B — same read, the low
+  // instruments simply land an octave or more below).
+  var voicesHtml='';
+  if(state.advanced && h.voices && h.voices.length>1){
+    var rows='';
+    for(var v=0;v<h.voices.length;v++){
+      var vc=h.voices[v];
+      var soundMidi=writtenMidi + vc.sound;
+      var diff=Math.round((soundMidi - concertMidi)/12);
+      var flag = diff===0 ? '' :
+        (Math.abs(diff)===1 ? (diff<0?'8ve lower':'8ve higher')
+                            : (Math.abs(diff)+' octaves '+(diff<0?'lower':'higher')));
+      rows+='<div class="voice"><span class="voice-who">'+vc.who+'</span>'+
+        '<span class="voice-snd">'+noteOct(soundMidi,true)+
+        (flag?' <span class="flag">'+flag+'</span>':'')+'</span></div>';
+    }
+    voicesHtml='<div class="voices"><div class="voices-h">Where it sounds</div>'+rows+'</div>';
+  }
+
   document.getElementById('play-result').innerHTML=
     '<div class="cap">'+(hear?'Concert pitch':'Your note')+'</div>'+
-    '<div class="big">'+sp.main+'</div>'+
+    '<div class="big">'+bigLabel+'</div>'+
     '<div class="sub">'+sub+'</div>'+
-    (tert?'<div class="tert">'+tert+'</div>':'');
+    (tert?'<div class="tert">'+tert+'</div>':'')+
+    voicesHtml;
 }
 
 function renderSig(nEl, nameEl, f){
@@ -672,7 +749,10 @@ function renderActive(){
   else if(state.mode==='read') renderRead();
   else renderPick();
 }
-function renderAll(){ renderTabs(); renderActive(); }
+function renderAll(){
+  document.getElementById('adv-toggle').setAttribute('aria-pressed', state.advanced?'true':'false');
+  renderTabs(); renderActive();
+}
 
 /* ---- wiring ---- */
 buildKeyboard();
@@ -686,6 +766,14 @@ document.getElementById('play-dir').addEventListener('click', function(e){
   var b=e.target.closest('.segbtn'); if(!b) return;
   state.playDir=b.dataset.dir; save(); renderPlay();
 });
+document.getElementById('adv-toggle').addEventListener('click', function(){
+  state.advanced=!state.advanced;
+  this.setAttribute('aria-pressed', state.advanced?'true':'false');
+  save(); renderPlay();
+});
+function stepOct(d){ state.playOct=Math.max(1,Math.min(7,state.playOct+d)); save(); renderPlay(); }
+document.getElementById('oct-minus').addEventListener('click', function(){ stepOct(-1); });
+document.getElementById('oct-plus').addEventListener('click', function(){ stepOct(1); });
 document.getElementById('read-horn').addEventListener('change', function(e){ state.instrument=e.target.value; save(); renderRead(); });
 document.getElementById('read-part').addEventListener('change', function(e){ state.readPart=e.target.value; save(); renderRead(); });
 document.getElementById('pick-part').addEventListener('change', function(e){ state.pickPart=e.target.value; save(); renderPick(); });
