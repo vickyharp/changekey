@@ -320,7 +320,7 @@ var CATALOG = [
      voices:[
        {sound:3, insts:[{n:'E♭ sopranino clarinet',lo:55,hi:96},{n:'E♭ cornet',lo:56,hi:84}]},
        {sound:-9, insts:[{n:'alto sax',lo:49,hi:80},{n:'alto clarinet',lo:43,hi:87},{n:'tenor horn',lo:45,hi:75}]},
-       {sound:-21, insts:[{n:'bari sax',lo:37,hi:68},{n:'contra-alto clarinet',lo:27,hi:63}]}]},
+       {sound:-21, insts:[{n:'bari sax',lo:37,hi:69},{n:'contra-alto clarinet',lo:27,hi:63}]}]},
   {id:'f',  key:'F',   shift:7,  ex:'French horn, English horn, mellophone. Less common: basset horn',
      voices:[{who:'French horn, English horn, mellophone', sound:-7}]},
   {id:'g',  key:'G',   shift:5,  ex:'Alto flute',
@@ -362,11 +362,18 @@ function intervalName(semi){
   return name;
 }
 var SHORT_INT=['P1','m2','M2','m3','M3','P4','TT','P5','m6','M6','m7','M7','P8'];
-function shortInt(semi){ var a=Math.abs(semi); return a<=12 ? SHORT_INT[a] : SHORT_INT[a%12]; }
-// concert->written direction arrow + short interval, e.g. shift +2 -> "↑M2", -3 -> "↓m3"
+// compound-aware short interval: 14 -> "M9", 21 -> "M13", 12 -> "P8"
+function shortIntC(semi){
+  var a=Math.abs(semi), oct=Math.floor(a/12), base=a%12, lbl=SHORT_INT[base];
+  if(oct===0) return lbl;
+  if(base===0) return oct===1?'P8':'P'+(oct*7+1);
+  var m=lbl.match(/^([A-Za-z]+)(\d+)$/);
+  return m ? m[1]+(parseInt(m[2],10)+7*oct) : lbl+'+'+oct+'8ve';
+}
+// concert->written direction arrow + interval, e.g. +2 -> "↑M2", -3 -> "↓m3", +14 -> "↑M9"
 function readTag(shift){
   if(shift===0) return '';
-  return (shift>0?'↑':'↓')+shortInt(shift);
+  return (shift>0?'↑':'↓')+shortIntC(shift);
 }
 function sigText(f){
   if(f===0) return 'no ♯/♭';
@@ -643,28 +650,36 @@ function renderPlay(){
   // instruments simply land an octave or more below).
   var voicesHtml='';
   if(state.advanced && h.voices && h.voices.length>1){
-    // framing B: everyone reads the same class transposition; the low instruments land lower
-    var playCell=noteOct(writtenMidi,true)+' <span class="mut">'+readTag(h.shift)+'</span>';
+    // Written branch: one written note in, varied soundings (framing B).
+    // Concert branch: one sounding note in, varied written notes (framing A).
     var rows='';
     for(var v=0;v<h.voices.length;v++){
       var vc=h.voices[v];
-      var soundMidi=writtenMidi + vc.sound;
-      var diff=Math.round((soundMidi - concertMidi)/12);
-      var flag = diff===0 ? '' :
-        (Math.abs(diff)===1 ? (diff<0?'8ve lower':'8ve higher')
-                            : (Math.abs(diff)+' octaves '+(diff<0?'lower':'higher')));
-      // strike each instrument whose playable range doesn't include this sounding pitch
+      var wM, sM;
+      if(hear){ wM=writtenMidi; sM=writtenMidi + vc.sound; }
+      else { sM=concertMidi; wM=concertMidi - vc.sound; }
+      // strike each instrument whose range doesn't include this (sounding) pitch
       var parts=[], anyIn=false;
       for(var w=0;w<vc.insts.length;w++){
-        var it=vc.insts[w], oor=(soundMidi<it.lo || soundMidi>it.hi);
+        var it=vc.insts[w], oor=(sM<it.lo || sM>it.hi);
         if(!oor) anyIn=true;
         parts.push('<span'+(oor?' class="oor"':'')+'>'+it.n+'</span>');
       }
+      // Play column: written note + how far above/below concert it's written
+      var playCell=noteOct(wM,true)+' <span class="mut">'+(hear?readTag(h.shift):readTag(-vc.sound))+'</span>';
+      // Sounds column: in the Written branch flag how far each voice lands from the top voice
+      var soundCell;
+      if(hear){
+        var diff=Math.round((sM - concertMidi)/12);
+        var flag = diff===0 ? '' :
+          (Math.abs(diff)===1 ? (diff<0?'8ve lower':'8ve higher')
+                              : (Math.abs(diff)+' octaves '+(diff<0?'lower':'higher')));
+        soundCell=noteOct(sM,true)+(flag?'<span class="flag">'+flag+'</span>':'');
+      } else { soundCell=noteOct(sM,true); }
       rows+='<tr'+(anyIn?'':' class="alloor"')+'><td>'+parts.join(', ')+'</td>'+
-        '<td class="c">'+playCell+'</td>'+
-        '<td class="r">'+noteOct(soundMidi,true)+(flag?'<span class="flag">'+flag+'</span>':'')+'</td></tr>';
+        '<td class="c">'+playCell+'</td><td class="r">'+soundCell+'</td></tr>';
     }
-    voicesHtml='<div class="voices"><div class="voices-h">Where it sounds</div>'+
+    voicesHtml='<div class="voices"><div class="voices-h">'+(hear?'Where it sounds':'What to write')+'</div>'+
       '<table class="vtab"><tr><th>Instruments</th><th class="c">Play</th><th class="r">Sounds</th></tr>'+
       rows+'</table></div>';
   }
