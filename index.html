@@ -177,6 +177,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   .vtab td.c{font-weight:500}
   .vtab .mut{color:var(--muted);font-weight:400;font-size:12px}
   .vtab .flag{display:block;font-weight:400;font-size:11px;color:var(--faint)}
+  .vtab .oor{text-decoration:line-through;color:var(--faint)}
+  .vtab tr.alloor td.c,.vtab tr.alloor td.r{color:var(--faint);text-decoration:line-through}
 </style>
 </head>
 <body>
@@ -309,11 +311,16 @@ var CATALOG = [
   {id:'c',  key:'C',   shift:0,  ex:'Flute, oboe, bassoon, strings, trombone, euphonium, tuba, piano',
      voices:[{who:'flute, oboe, bassoon, strings, trombone, tuba', sound:0}]},
   {id:'bb', key:'B♭', shift:2,  ex:'Trumpet, cornet, clarinet, tenor/soprano sax, flugelhorn, bass clarinet, brass-band baritone/euphonium/B♭ tuba',
-     voices:[{who:'clarinet, trumpet, cornet, soprano sax, flugelhorn', sound:-2},{who:'tenor sax, bass clarinet', sound:-14}]},
+     voices:[
+       {sound:-2, insts:[{n:'clarinet',lo:50,hi:94},{n:'trumpet',lo:54,hi:86},{n:'cornet',lo:54,hi:86},{n:'soprano sax',lo:56,hi:88},{n:'flugelhorn',lo:54,hi:84}]},
+       {sound:-14, insts:[{n:'tenor sax',lo:44,hi:76},{n:'bass clarinet',lo:34,hi:79}]}]},
   {id:'a',  key:'A',   shift:3,  ex:'Clarinet in A. Less common: oboe d’amore, piccolo trumpet in A',
      voices:[{who:'clarinet in A', sound:-3}]},
   {id:'eb', key:'E♭', shift:-3, ex:'E♭ sopranino clarinet, alto/bari sax, brass-band tenor horn, E♭ tuba. Less common: alto clarinet, E♭ cornet',
-     voices:[{who:'E♭ sopranino clarinet, E♭ cornet', sound:3},{who:'alto sax, alto clarinet, tenor horn', sound:-9},{who:'bari sax, contra-alto clarinet', sound:-21}]},
+     voices:[
+       {sound:3, insts:[{n:'E♭ sopranino clarinet',lo:55,hi:96},{n:'E♭ cornet',lo:56,hi:84}]},
+       {sound:-9, insts:[{n:'alto sax',lo:49,hi:80},{n:'alto clarinet',lo:43,hi:87},{n:'tenor horn',lo:45,hi:75}]},
+       {sound:-21, insts:[{n:'bari sax',lo:37,hi:68},{n:'contra-alto clarinet',lo:27,hi:63}]}]},
   {id:'f',  key:'F',   shift:7,  ex:'French horn, English horn, mellophone. Less common: basset horn',
      voices:[{who:'French horn, English horn, mellophone', sound:-7}]},
   {id:'g',  key:'G',   shift:5,  ex:'Alto flute',
@@ -646,7 +653,15 @@ function renderPlay(){
       var flag = diff===0 ? '' :
         (Math.abs(diff)===1 ? (diff<0?'8ve lower':'8ve higher')
                             : (Math.abs(diff)+' octaves '+(diff<0?'lower':'higher')));
-      rows+='<tr><td>'+vc.who+'</td><td class="c">'+playCell+'</td>'+
+      // strike each instrument whose playable range doesn't include this sounding pitch
+      var parts=[], anyIn=false;
+      for(var w=0;w<vc.insts.length;w++){
+        var it=vc.insts[w], oor=(soundMidi<it.lo || soundMidi>it.hi);
+        if(!oor) anyIn=true;
+        parts.push('<span'+(oor?' class="oor"':'')+'>'+it.n+'</span>');
+      }
+      rows+='<tr'+(anyIn?'':' class="alloor"')+'><td>'+parts.join(', ')+'</td>'+
+        '<td class="c">'+playCell+'</td>'+
         '<td class="r">'+noteOct(soundMidi,true)+(flag?'<span class="flag">'+flag+'</span>':'')+'</td></tr>';
     }
     voicesHtml='<div class="voices"><div class="voices-h">Where it sounds</div>'+
