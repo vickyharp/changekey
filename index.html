@@ -209,7 +209,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   </div>
   <div class="seg" id="play-dir" role="tablist" aria-label="Conversion direction">
     <button class="segbtn" type="button" role="tab" data-dir="play" aria-selected="true">Concert</button>
-    <button class="segbtn" type="button" role="tab" data-dir="hear" aria-selected="false">Your note</button>
+    <button class="segbtn" type="button" role="tab" data-dir="hear" aria-selected="false">Written</button>
   </div>
   <div class="prompt-row">
     <p class="prompt" id="play-prompt">Tap the concert pitch</p>
@@ -567,7 +567,7 @@ function buildKeyboard(){
 
 /* ---- renderers ---- */
 var SUBS={
-  play:'Convert between your note and the concert pitch.',
+  play:'Convert between written note and the concert pitch.',
   read:"You're playing a part on your instrument — see how to read it.",
   pick:"You've been handed a part — see which instrument is easiest to read it on."
 };
@@ -588,7 +588,7 @@ function renderPlay(){
   var dbtns=document.querySelectorAll('#play-dir .segbtn');
   for(var d=0;d<dbtns.length;d++)
     dbtns[d].setAttribute('aria-selected', dbtns[d].dataset.dir===state.playDir?'true':'false');
-  document.getElementById('play-prompt').textContent=hear?'Tap the note you play':'Tap the concert pitch';
+  document.getElementById('play-prompt').textContent=hear?'Tap the written note':'Tap the concert pitch';
 
   // octave picker (advanced only)
   document.getElementById('play-oct').hidden=!state.advanced;
@@ -621,13 +621,13 @@ function renderPlay(){
   var sub, tert='';
   var up=mod12(h.shift);
   if(up===0){
-    sub='Your note is the same as concert pitch.';
+    sub='The written note is the same as concert pitch.';
   }else{
     var down=12-up;                 // the octave-complement, reached the other direction
     var a,b;                        // a = smaller interval (shown first), b = complement
     if(up<=down){ a={n:up,dir:'higher'}; b={n:down,dir:'lower'}; }
     else{ a={n:down,dir:'lower'}; b={n:up,dir:'higher'}; }
-    sub='Your note is <strong>'+a.n+' semitone'+(a.n===1?'':'s')+' '+a.dir+'</strong> than concert · a '+intervalName(a.n);
+    sub='The written note is <strong>'+a.n+' semitone'+(a.n===1?'':'s')+' '+a.dir+'</strong> than concert · a '+intervalName(a.n);
     tert='or '+b.n+' semitones '+b.dir+' · a '+intervalName(b.n);
   }
   if(sp.alt) tert=(tert?tert+' · ':'')+'also written '+sp.alt;
@@ -655,7 +655,7 @@ function renderPlay(){
   }
 
   document.getElementById('play-result').innerHTML=
-    '<div class="cap">'+(hear?'Concert pitch':'Your note')+'</div>'+
+    '<div class="cap">'+(hear?'Concert pitch':'Written note')+'</div>'+
     '<div class="big">'+bigLabel+'</div>'+
     '<div class="sub">'+sub+'</div>'+
     (tert?'<div class="tert">'+tert+'</div>':'')+
