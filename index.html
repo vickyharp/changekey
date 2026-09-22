@@ -75,7 +75,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     padding:13px 40px 13px 14px;min-height:48px;cursor:pointer;
     background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='8'%3E%3Cpath%20d='M1%201l5%205%205-5'%20stroke='%239a9891'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 15px center}
-  .prompt{font-size:14px;color:var(--muted);margin:2px 2px 9px}
+  .prompt{font-size:14px;color:var(--muted);margin:0 2px}
   /* direction toggle (Play) */
   .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--card2);
     border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:16px}
@@ -157,8 +157,14 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   .horn .inner{padding:0 14px 12px}
   /* advanced mode: toggle, octave picker, voices block */
   .brand-actions{display:flex;gap:8px;align-items:center}
-  .sharebtn.adv[aria-pressed="true"]{background:var(--accent-bg);border-color:var(--accent-bg);color:var(--accent-text)}
-  .prompt-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .advtoggle{display:inline-flex;align-items:center;gap:8px;background:transparent;border:0;cursor:pointer;
+    font:inherit;font-size:13px;font-weight:500;color:var(--muted);padding:6px 2px;min-height:36px}
+  .advtoggle .track{position:relative;width:34px;height:20px;border-radius:20px;background:var(--faint);transition:background .15s}
+  .advtoggle .thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+  .advtoggle[aria-checked="true"]{color:var(--accent-text)}
+  .advtoggle[aria-checked="true"] .track{background:var(--accent)}
+  .advtoggle[aria-checked="true"] .thumb{transform:translateX(14px)}
+  .prompt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 18px}
   .oct{display:flex;align-items:center;gap:6px}
   .oct[hidden]{display:none}
   .oct-label{font-size:12px;color:var(--muted)}
@@ -188,7 +194,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   <div class="brandrow">
     <p class="brand">changekey<span class="tld">.to</span></p>
     <div class="brand-actions">
-    <button class="sharebtn adv" id="adv-toggle" aria-pressed="false" aria-label="Toggle advanced mode">Advanced</button>
+    <button class="advtoggle" id="adv-toggle" role="switch" aria-checked="false" aria-label="Advanced mode">
+      <span>Advanced</span><span class="track"><span class="thumb"></span></span></button>
     <button class="sharebtn" id="share-open" aria-label="Share this view">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -825,7 +832,7 @@ function renderActive(){
   else renderPick();
 }
 function renderAll(){
-  document.getElementById('adv-toggle').setAttribute('aria-pressed', state.advanced?'true':'false');
+  document.getElementById('adv-toggle').setAttribute('aria-checked', state.advanced?'true':'false');
   renderTabs(); renderActive();
 }
 
@@ -843,7 +850,7 @@ document.getElementById('play-dir').addEventListener('click', function(e){
 });
 document.getElementById('adv-toggle').addEventListener('click', function(){
   state.advanced=!state.advanced;
-  this.setAttribute('aria-pressed', state.advanced?'true':'false');
+  this.setAttribute('aria-checked', state.advanced?'true':'false');
   save(); renderPlay();
 });
 function stepOct(d){ state.playOct=Math.max(1,Math.min(7,state.playOct+d)); save(); renderPlay(); }
