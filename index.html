@@ -608,10 +608,12 @@ function renderPlay(){
   else { concertMidi=inMidi; writtenMidi=inMidi + h.shift; }
   var mainMidi=hear ? concertMidi : writtenMidi;
   var sp=spell(mod12(mainMidi), true);
-  // When hearing a multi-voice class the concert octave is instrument-specific (shown per
-  // row below), so the headline stays a pitch class; otherwise show the exact octave.
+  // For a multi-voice class the octave is instrument-specific in BOTH directions (a bass
+  // clarinet neither plays nor sounds the same octave as the soprano), so the headline stays
+  // a pitch class and the per-instrument octaves live in the block. Only single-instrument
+  // classes have one unambiguous octave.
   var multi=h.voices && h.voices.length>1;
-  var showOct=state.advanced && !(hear && multi);
+  var showOct=state.advanced && !multi;
   var bigLabel=showOct ? noteOct(mainMidi, true) : sp.main;
 
   // The relationship "your note vs concert" is fixed (= shift), so this line reads the
