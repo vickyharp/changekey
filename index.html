@@ -375,24 +375,33 @@ function save(){ try{ localStorage.setItem('transpose.v1', JSON.stringify(state)
      <inst>/from/<part>[/<key>]  Read, part instrument + key signature
      pick/<part>[/<key>]         Pick a horn for a part
    <inst>/<part> are instrument keys (Bb, Eb, A, F, C, D, G).
-   <note> is a pitch (Bb, Fs/F#, etc.). <key> is a signature count (2b, 3s, 0). */
+   <note> is a pitch (Bb, Fs/F#, etc.). <key> is a signature count (2b, 3s, 0).
+   Accidentals may also be spelled out: Bflat, B-flat, Fsharp, F-sharp, 2 flats,
+   3-sharps — all fold to the canonical b/s that we emit ourselves. */
 var NOTE_TOK=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 var NOTE_BASE={c:0,d:2,e:4,f:5,g:7,a:9,b:11};
 function instTok(id){ return inst(id).key.replace(/♭/g,'b'); }
 function keyTok(f){ return f===0?'0':(f>0?f+'s':(-f)+'b'); }
+// Fold spelled-out accidentals in user-typed URLs to the canonical single letters.
+function normAcc(t){
+  return (''+t)
+    .replace(/[-_\s]*flats?/gi,'b')
+    .replace(/[-_\s]*sharps?/gi,'s')
+    .replace(/[-_\s]*naturals?/gi,'');
+}
 function parseInstrument(t){
-  if(!t) return null; t=t.replace(/♭/g,'b').toLowerCase();
+  if(!t) return null; t=normAcc(t).replace(/♭/g,'b').toLowerCase();
   for(var i=0;i<CATALOG.length;i++) if(CATALOG[i].key.replace(/♭/g,'b').toLowerCase()===t) return CATALOG[i].id;
   return null;
 }
 function parseNote(t){
-  if(!t) return null; var base=NOTE_BASE[t[0].toLowerCase()]; if(base===undefined) return null;
+  if(!t) return null; t=normAcc(t); var base=NOTE_BASE[t[0].toLowerCase()]; if(base===undefined) return null;
   var pc=base;
   for(var i=1;i<t.length;i++){ var c=t[i].toLowerCase(); if(c==='b'||c==='f')pc--; else if(c==='s'||c==='#')pc++; }
   return mod12(pc);
 }
 function parseKey(t){
-  if(t==null) return null; var m=/^(\d+)\s*(b|f|s|#)?$/i.exec((''+t).trim()); if(!m) return null;
+  if(t==null) return null; var m=/^(\d+)\s*(b|f|s|#)?$/i.exec(normAcc(t).trim()); if(!m) return null;
   var n=parseInt(m[1],10), suf=(m[2]||'').toLowerCase();
   var f=(suf==='b'||suf==='f')?-n:n; return Math.max(-7,Math.min(7,f));
 }
