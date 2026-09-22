@@ -151,6 +151,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   .horn-shift{font-size:12px;color:var(--muted)}
   .badge{display:inline-block;background:var(--good-bg);color:var(--good);font-size:11px;
     font-weight:600;padding:2px 8px;border-radius:20px;margin-top:3px}
+  .badge.dim{background:var(--card2);color:var(--muted)}
+  .badge+.badge{margin-left:6px}
   .horn details{border-top:1px solid var(--border);margin:0;padding:0}
   .horn summary{padding:9px 14px}
   .horn .inner{padding:0 14px 12px}
@@ -264,14 +266,15 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 // sopranino and alto share pitch class and key signature — they differ only by octave,
 // which this app never shows — so each transposition is a single entry. `shift` is the
 // signed semitone move from concert to written pitch (positive = written above concert).
+// `niche:true` marks a transposition that's mostly historical / rare (e.g. clarinet
+// in D) — shown but flagged and sorted below the common instruments in Pick.
 var CATALOG = [
-  {id:'c',  key:'C',       shift:0,  ex:'Flute, oboe, piano, C parts'},
+  {id:'c',  key:'C',   shift:0,  ex:'Flute, oboe, piano, C parts'},
   {id:'bb', key:'B♭', shift:2,  ex:'Trumpet, clarinet, tenor sax, bass clarinet'},
-  {id:'a',  key:'A',       shift:3,  ex:'Clarinet in A'},
+  {id:'a',  key:'A',   shift:3,  ex:'Clarinet in A'},
   {id:'eb', key:'E♭', shift:-3, ex:'E♭ clarinet, alto sax, bari sax'},
-  {id:'f',  key:'F',       shift:7,  ex:'French horn, English horn'},
-  {id:'d',  key:'D',       shift:-2, ex:'Clarinet or trumpet in D'},
-  {id:'g',  key:'G',       shift:5,  ex:'Alto flute, clarinet in G'}
+  {id:'f',  key:'F',   shift:7,  ex:'French horn, English horn'},
+  {id:'d',  key:'D',   shift:-2, ex:'Clarinet or trumpet in D · older repertoire', niche:true}
 ];
 function inst(id){ for(var i=0;i<CATALOG.length;i++) if(CATALOG[i].id===id) return CATALOG[i]; return CATALOG[1]; }
 
@@ -632,6 +635,8 @@ function renderPick(){
   }
   rows.sort(function(a,b){
     if(a.pinned!==b.pinned) return a.pinned?-1:1;
+    var an=a.H.niche?1:0, bn=b.H.niche?1:0;
+    if(an!==bn) return an-bn;                    // common instruments before niche ones
     if(a.count!==b.count) return a.count-b.count;
     return Math.abs(a.deltaR)-Math.abs(b.deltaR);
   });
@@ -646,7 +651,8 @@ function renderPick(){
         '<button class="pin" data-id="'+H.id+'" aria-pressed="'+(x.pinned?'true':'false')+
           '" aria-label="Pin '+H.key+'">'+(x.pinned?'★':'☆')+'</button>'+
         '<div><div class="horn-name">'+H.key+'</div><div class="horn-ex">'+H.ex+'</div>'+
-          (x.asWritten?'<span class="badge">no transposing</span>':'')+'</div>'+
+          (x.asWritten?'<span class="badge">no transposing</span>':'')+
+          (H.niche?'<span class="badge dim">less common</span>':'')+'</div>'+
         '<div class="horn-right"><div class="horn-count">'+sigText(x.readF)+'</div>'+
           '<div class="horn-shift">'+shiftTxt+'</div></div>'+
       '</div>'+
