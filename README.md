@@ -91,3 +91,7 @@ host the `#hash` form of the links works with no configuration.
 
 Notation glyphs are outlines from [Bravura](https://github.com/steinbergmedia/bravura)
 (SIL Open Font License).
+
+## License
+
+[MIT](LICENSE)
