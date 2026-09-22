@@ -166,12 +166,17 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   .oct-btn:active{background:var(--card2)}
   .oct-val{font-size:15px;font-weight:500;min-width:18px;text-align:center}
   .voices{margin-top:16px;border-top:1px solid var(--border);padding-top:12px;text-align:left}
-  .voices-h{font-size:12px;color:var(--muted);margin:0 0 8px}
-  .voice{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:7px 0;border-bottom:1px solid var(--border)}
-  .voice:last-child{border-bottom:0}
-  .voice-who{color:var(--text)}
-  .voice-snd{font-weight:500;text-align:right;white-space:nowrap}
-  .voice-snd .flag{font-weight:400;font-size:12px;color:var(--faint)}
+  .voices-h{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .vtab{width:100%;border-collapse:collapse;font-size:13px}
+  .vtab th{font-weight:400;color:var(--muted);font-size:12px;padding:3px 0;text-align:left}
+  .vtab th.c,.vtab td.c{text-align:center}
+  .vtab th.r,.vtab td.r{text-align:right}
+  .vtab td{padding:8px 0;border-top:1px solid var(--border);vertical-align:top;color:var(--text)}
+  .vtab td.c,.vtab td.r{white-space:nowrap}
+  .vtab td.r{font-weight:500}
+  .vtab td.c{font-weight:500}
+  .vtab .mut{color:var(--muted);font-weight:400;font-size:12px}
+  .vtab .flag{display:block;font-weight:400;font-size:11px;color:var(--faint)}
 </style>
 </head>
 <body>
@@ -348,6 +353,13 @@ function noteOct(midi, preferFlat){
 function intervalName(semi){
   var a=Math.abs(semi); var base=a%12; var name=(a>0 && base===0)?'octave':INTERVAL[base];
   return name;
+}
+var SHORT_INT=['P1','m2','M2','m3','M3','P4','TT','P5','m6','M6','m7','M7','P8'];
+function shortInt(semi){ var a=Math.abs(semi); return a<=12 ? SHORT_INT[a] : SHORT_INT[a%12]; }
+// concert->written direction arrow + short interval, e.g. shift +2 -> "↑M2", -3 -> "↓m3"
+function readTag(shift){
+  if(shift===0) return '';
+  return (shift>0?'↑':'↓')+shortInt(shift);
 }
 function sigText(f){
   if(f===0) return 'no ♯/♭';
@@ -618,6 +630,8 @@ function renderPlay(){
   // instruments simply land an octave or more below).
   var voicesHtml='';
   if(state.advanced && h.voices && h.voices.length>1){
+    // framing B: everyone reads the same class transposition; the low instruments land lower
+    var playCell=noteOct(writtenMidi,true)+' <span class="mut">'+readTag(h.shift)+'</span>';
     var rows='';
     for(var v=0;v<h.voices.length;v++){
       var vc=h.voices[v];
@@ -626,11 +640,12 @@ function renderPlay(){
       var flag = diff===0 ? '' :
         (Math.abs(diff)===1 ? (diff<0?'8ve lower':'8ve higher')
                             : (Math.abs(diff)+' octaves '+(diff<0?'lower':'higher')));
-      rows+='<div class="voice"><span class="voice-who">'+vc.who+'</span>'+
-        '<span class="voice-snd">'+noteOct(soundMidi,true)+
-        (flag?' <span class="flag">'+flag+'</span>':'')+'</span></div>';
+      rows+='<tr><td>'+vc.who+'</td><td class="c">'+playCell+'</td>'+
+        '<td class="r">'+noteOct(soundMidi,true)+(flag?'<span class="flag">'+flag+'</span>':'')+'</td></tr>';
     }
-    voicesHtml='<div class="voices"><div class="voices-h">Where it sounds</div>'+rows+'</div>';
+    voicesHtml='<div class="voices"><div class="voices-h">Where it sounds</div>'+
+      '<table class="vtab"><tr><th>Instruments</th><th class="c">Play</th><th class="r">Sounds</th></tr>'+
+      rows+'</table></div>';
   }
 
   document.getElementById('play-result').innerHTML=
