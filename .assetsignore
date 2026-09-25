@@ -2,4 +2,6 @@
 wrangler.toml
 .assetsignore
 README.md
+AGENTS.md
+LICENSE
 .gitignore
