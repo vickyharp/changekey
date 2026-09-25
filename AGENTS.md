@@ -1,25 +1,25 @@
-# AGENTS.md — changekey.to
+# AGENTS.md - changekey.to
 
 Orientation for an AI/agent working on this repo. Read this first.
 
 ## What this is
 
-**changekey.to** — a fast, mobile-first transposition reference for players (and
+**changekey.to** - a fast, mobile-first transposition reference for players (and
 arrangers) of transposing instruments. Live at https://changekey.to. Three modes,
 one glanceable answer per screen:
 
-- **Play** — convert between a written note and concert pitch (a "Concert | Written"
+- **Play** - convert between a written note and concert pitch (a "Concert | Written"
   direction toggle). Has an **Advanced** mode with per-instrument octave detail.
-- **Read** — a part written for instrument X in key sig Y: what key do you read it in
+- **Read** - a part written for instrument X in key sig Y: what key do you read it in
   on your instrument, and how far to transpose. (Advanced octave view: NOT built yet.)
-- **Pick** — handed a part, which of your instruments reads most easily (ranked by
+- **Pick** - handed a part, which of your instruments reads most easily (ranked by
   fewest accidentals; star to pin the ones you own).
 
 ## Architecture & hard constraints
 
 - **One file: `index.html`.** All HTML + CSS + vanilla JS, no framework, no build step,
   no dependencies, no network calls at runtime (the QR library and Bravura notation
-  glyphs are inlined). Keep it that way — don't add sibling `.js`/`.css`/font files
+  glyphs are inlined). Keep it that way - don't add sibling `.js`/`.css`/font files
   (they complicate the static-asset deploy; we inlined the QR lib for exactly this).
 - Mobile-first (~375px baseline), light/dark via `prefers-color-scheme`, colors as CSS
   variables on `:root`.
@@ -27,32 +27,32 @@ one glanceable answer per screen:
 
 ## Repo files
 
-- `index.html` — the whole app.
-- `wrangler.toml` — Cloudflare **Worker (static assets)** config: `[assets] directory = "."`
+- `index.html` - the whole app.
+- `wrangler.toml` - Cloudflare **Worker (static assets)** config: `[assets] directory = "."`
   and `not_found_handling = "single-page-application"` (serves index.html for pretty
   paths like `/Bb`). `name` must match the Cloudflare project name (`changekey`).
-- `.assetsignore` — repo-root files not served (README, config, etc.).
-- `README.md` — public readme, incl. "Adding or editing instruments".
-- `LICENSE` — MIT.
+- `.assetsignore` - repo-root files not served (README, config, etc.).
+- `README.md` - public readme, incl. "Adding or editing instruments".
+- `LICENSE` - MIT.
 
 ## Core data model (search these names in index.html)
 
-- **`CATALOG`** (~line 324) — one entry per transposition (`c, bb, a, eb, f, g, d`). Each has:
-  - `key` — display key (`'B♭'`).
-  - `shift` — signed semitone move **concert→written pitch class** (written above concert
+- **`CATALOG`** (~line 324) - one entry per transposition (`c, bb, a, eb, f, g, d`). Each has:
+ - `key` - display key (`'B♭'`).
+ - `shift` - signed semitone move **concert→written pitch class** (written above concert
     = positive), used for key math. `C 0, B♭ +2, A +3, E♭ -3, F +7, G +5, D -2`.
-  - `insts` — the single instrument list **both Play and Pick derive from**. Each:
+ - `insts` - the single instrument list **both Play and Pick derive from**. Each:
     `{ n:'alto sax', sound:-9, lo:'Db3', hi:'Ab5', less:true }`
-    - `sound` — full **written→sounding** transposition in semitones incl. octaves
+   - `sound` - full **written→sounding** transposition in semitones incl. octaves
       (negative = sounds lower). Its value mod 12 is constant within a key (every B♭
       instrument is -2, -14, -26 …). Examples: B♭ clarinet -2, tenor sax/bass clarinet
       -14, alto sax -9, bari sax -21, E♭ sopranino +3, French horn -7.
-    - `lo`/`hi` — **concert (sounding)** range as note names (`'D3'`,`'Bb6'`; `b`/`#`).
+   - `lo`/`hi` - **concert (sounding)** range as note names (`'D3'`,`'Bb6'`; `b`/`#`).
       Converted to MIDI at load by `nm()`. Used to grey out (strike) out-of-range results.
-    - `less` — optional; rare/historical (shown after "Less common:").
-- **`nm(name)`** — note name → MIDI (C4 = 60).
-- **`exList(insts)`** — Pick's example text, derived from `insts` (common, then "Less common:").
-- **`groupsOf(insts)`** — groups a class's insts by `sound` (octave), highest-sounding
+   - `less` - optional; rare/historical (shown after "Less common:").
+- **`nm(name)`** - note name → MIDI (C4 = 60).
+- **`exList(insts)`** - Pick's example text, derived from `insts` (common, then "Less common:").
+- **`groupsOf(insts)`** - groups a class's insts by `sound` (octave), highest-sounding
   first. The Advanced Play block iterates these.
 - Keys use a **fifths** integer (−7..+7): `FIFTH_NAME`/`FIFTH_MINOR`, `reduceFifths(f)`
   (normalizes to −5..+6, fewest accidentals), `keyName(f)` → "X major / Y minor" (relative
@@ -62,7 +62,7 @@ one glanceable answer per screen:
 ## Modes & state
 
 `var state = {mode, pins[], instrument, playPc, playDir, playOct, advanced, readPart,
-readSig, pickPart, pickSig}` — persisted in `localStorage['transpose.v1']`. **`advanced`
+readSig, pickPart, pickSig}` - persisted in `localStorage['transpose.v1']`. **`advanced`
 and `playOct` are intentionally NOT in the URL** (local prefs, keep links clean).
 
 - `playDir`: `'play'` = Concert direction (input a concert pitch → written note);
@@ -71,7 +71,7 @@ and `playOct` are intentionally NOT in the URL** (local prefs, keep links clean)
 - `readSig`/`pickSig` are fifths ints; `readPart`/`pickPart` are the instrument the part
   is written for (a *different* concept from `instrument`, which is the one in hand).
 
-## Advanced mode (Play) — the octave view (already shipped)
+## Advanced mode (Play) - the octave view (already shipped)
 
 Header **Advanced** switch (`role="switch"`, `aria-checked`). When on, Play gains an octave
 stepper on the keyboard and an "instruments & octaves" block rendered for **every** class
@@ -90,7 +90,7 @@ block). Instruments are **struck through** (`.oor`) when the sounding pitch is o
 `lo`/`hi`; a whole row struck if all are (`.alloor`). Result caption is a sentence that
 flows into the big note ("To hear concert A♭3 on a B♭ instrument, the written note is …").
 
-**Read and Pick do NOT yet have an advanced octave view** — that's the next task.
+**Read and Pick do NOT yet have an advanced octave view** - that's the next task.
 
 ## URL routing (search `buildRoute`, `applyRoute`, `currentRoute`, `normAcc`)
 
@@ -107,17 +107,17 @@ flows into the big note ("To hear concert A♭3 on a B♭ instrument, the writte
 
 Treble staff + key signature drawn as inline SVG in `staffSVG(fifths, heightPx)`. The
 clef/sharp/flat/natural are **inlined SVG path outlines** (`GLYPH.gClef` etc.) extracted
-from the OFL Bravura font — 1000 units/em = 4 staff spaces, no font file. Used in Read.
+from the OFL Bravura font - 1000 units/em = 4 staff spaces, no font file. Used in Read.
 For any new notation, reuse `staffSVG`/`GLYPH`; don't add a font.
 
 ## Dev & test workflow
 
 - No build. Edit `index.html`, then serve locally to test:
-  `py -3 -m http.server 8145` (Windows; `py -3` is the real Python — the `python`/`winget`
+  `py -3 -m http.server 8145` (Windows; `py -3` is the real Python - the `python`/`winget`
   in PATH are Store stubs that fail with "Permission denied"). Open
   `http://localhost:8145/index.html` in the **built-in browser** (`mcp__Claude_Browser__*`).
 - **The desktop file preview loads local files as a `data:` URL, which strips the hash and
-  path** — so URL-routing must be tested over the local **http** server, not a `file://`
+  path** - so URL-routing must be tested over the local **http** server, not a `file://`
   preview.
 - Prefer driving/asserting via `javascript_tool` (set `state.*`, call `renderPlay()`, read
   the DOM) for exact checks; screenshot at mobile (`resize_window` preset `mobile` = 375×812)
@@ -155,7 +155,8 @@ For any new notation, reuse `staffSVG`/`GLYPH`; don't add a font.
   default); the base experience stays simple.
 - Say **"written note"**, not "your note". Always show the **relative minor** with a key
   ("A major / F♯ minor"). Key signatures are entered by **count** (♯/♭), names optional.
-- Niche instruments are marked inline with "Less common:" — **no** reordering or badges.
+- Niche instruments are marked inline with "Less common:" - **no** reordering or badges.
   In Pick, users **star** the instruments they own; nothing is required.
 - Instrument data must stay **contributor-friendly** (note-name ranges, documented in the
   `CATALOG` comment and README). Both Play and Pick must derive from the same `insts`.
+- Do not use em-dashes. Use a simple hyphen instead, or restructure the sentence.
