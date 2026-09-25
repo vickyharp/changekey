@@ -1,4 +1,4 @@
-# Cloudflare Worker (static assets only) — no server code, just files.
+# Cloudflare Worker (static assets only) - no server code, just files.
 # `[assets].directory = "."` is the entry point the build was missing.
 # `not_found_handling = "single-page-application"` serves index.html (200) for any
 # unknown path (e.g. /Bb, /Bb/from/A/2b), so it replaces the old _redirects hack.
